@@ -25,10 +25,12 @@ From the 1998 GDI autoplay menus of *StarCraft: Brood War* and the iconic 2011â€
 
 > ### **[Download `BlizzLauncherArchive.exe` v1.0.0 (Standalone Windows x64 - Zero Dependencies)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/download/v1.0.0/BlizzLauncherArchive.exe)**
 > - **Version:** `v1.0.0`
-> - **SHA-256:** `8f2310963215b4d4129c89d3822a5c0ac2d4e08350278f49f118fb4463b743b5` ([`release/SHA256SUMS.txt`](release/SHA256SUMS.txt))
+> - **SHA-256:** `81c0eceae39f524e71b5b7d5ecdb7a57264d9e4c1d693feadd2fb2261ae9df76` ([`release/SHA256SUMS.txt`](release/SHA256SUMS.txt))
 > - **Historical Catalog & Reference:** [`docs/ARCHIVAL_CATALOG.md`](docs/ARCHIVAL_CATALOG.md)
 > - **Server & Launcher Developer Integration Guide:** [`docs/SERVER_INTEGRATION_GUIDE.md`](docs/SERVER_INTEGRATION_GUIDE.md)
 > - Or browse **[GitHub Releases](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)**
+
+![BlizzLauncherArchive Interface](docs/preview-main-hero.png)
 
 ---
 

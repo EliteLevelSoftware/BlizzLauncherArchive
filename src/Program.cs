@@ -42,6 +42,31 @@ namespace BlizzLauncherArchive
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
+                if (a.Equals("--snapshot-expanded", StringComparison.OrdinalIgnoreCase) && i + 2 < args.Length)
+                {
+                    int expandIdx = int.Parse(args[++i]);
+                    string snapPath = args[++i];
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+                    var form = new LauncherSelectorForm();
+                    form.Show();
+                    form.CaptureSnapshot(snapPath, expandIdx);
+                    form.Close();
+                    Console.WriteLine($"Expanded snapshot saved to {snapPath}");
+                    return 0;
+                }
+                if (a.Equals("--snapshot", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    string snapPath = args[++i];
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+                    var form = new LauncherSelectorForm();
+                    form.Show();
+                    form.CaptureSnapshot(snapPath);
+                    form.Close();
+                    Console.WriteLine($"Snapshot saved to {snapPath}");
+                    return 0;
+                }
                 if (a.Equals("--help", StringComparison.OrdinalIgnoreCase) || a.Equals("-h", StringComparison.OrdinalIgnoreCase))
                 {
                     PrintHelp();
