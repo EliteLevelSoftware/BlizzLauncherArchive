@@ -1,3 +1,30 @@
+# Release Notes: BlizzLauncherArchive v1.0.3
+
+**Release Date:** November 2026  
+**Build:** `v1.0.3` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.3
+
+### 1. Clientless Standalone Retro Emulator (Preservation Mode)
+- **Eliminated "Executable Not Found" Blockers:** When running in clientless preservation mode without a full 15 GB retail game client installed, clicking **PLAY** now launches the authentic **Clientless Preservation Sandbox** rather than throwing an error dialog.
+- **On-the-Fly Client Linking:** Added a **`[ 📁 Link Client... ]`** button directly to the action bar, enabling users to effortlessly browse and link an existing game executable (`Diablo III.exe`, `Diablo III64.exe`, `SC2.exe`, etc.) on any drive or switch back to Standalone Mode anytime.
+- **Automated Directory Discovery:** Proactively detects common retail game installation paths across `Program Files (x86)` and standard game library drives, seamlessly transitioning between Clientless Mode and Linked Client Mode.
+
+### 2. Multi-Game Family Retro Artwork & Bulletins
+- Dynamically adapts typography, banner artwork (`d3_banner.jpg`, `sc2_banner.jpg`, `wow_banner.jpg`, `wc3_banner.jpg`, `d2_banner.jpg`, `hearthstone_banner.jpg`), and realm news bulletins to the selected game family.
+- Expanded Launcher & Realm Preferences dialog with gateway selection (Americas, Europe, Asia, PTR) and client management.
+
+### 3. Smart Launch-Launcher.bat Offline Preservation Runner
+- Updated generated batch script to detect if a full game client is present in the archive directory:
+  - If a retail client exists, it launches the patched vintage standalone Qt client directly with the working directory set to the game path, preventing "Please run from game directory" prompts.
+  - If run in an archive-only folder without retail game files, it automatically starts the clientless retro emulator.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.2
 
 **Release Date:** November 2026  
