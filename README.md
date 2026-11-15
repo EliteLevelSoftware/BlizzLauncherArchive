@@ -157,4 +157,4 @@ For guides on how to connect preserved launchers to custom game server emulators
 ## License
 
 This project is released under the [MIT License](LICENSE).  
-Copyright © 2026 Elite Level Software (EliteLevelSoftware@gmail.com).
+Copyright © 2026 Elite Level Software.

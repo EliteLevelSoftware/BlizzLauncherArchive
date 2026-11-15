@@ -1,7 +1,7 @@
 # Release Notes: BlizzLauncherArchive v1.0.0
 
 **Release Date:** November 2026  
-**Author:** Elite Level Software (EliteLevelSoftware@gmail.com)  
+**Build:** `v1.0.0` (source build)  
 **Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
 **Platform:** Windows 10 / 11 (64-bit)  
 
