@@ -1,1 +1,1 @@
-﻿affb2c15957d39e875b5099278c71283dbbf1774304eb5be2aca01e46a4f7911  BlizzLauncherArchive.exe
+﻿074f030ac0f0b15143dc9f8842622560b37f22105afeaaeeb79877472553f149 *BlizzLauncherArchive.exe

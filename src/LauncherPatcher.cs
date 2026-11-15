@@ -15,6 +15,53 @@ namespace BlizzLauncherArchive
         //    84 c0 74 0f c6 46 14 01 c7 46 08 0c 00 00 00 6a 0c
         private static readonly byte[] D3Stage8To11Sig = { 0x84, 0xC0, 0x74, 0x0F, 0xC6, 0x46, 0x14, 0x01, 0xC7, 0x46, 0x08, 0x0C, 0x00, 0x00, 0x00, 0x6A, 0x0C };
 
+        // 2. Native Qt Client (Blizzard Launcher.exe in Client\Blizzard Launcher.888):
+        //    Bypass product code check: cmp eax, 3; ja default -> mov eax, 2; nop; nop; nop; nop
+        //    83 f8 03 0f 87 a0 00 00 00 -> b8 02 00 00 00 90 90 90 90
+        private static readonly byte[] NativeProductCheckSig = { 0x83, 0xF8, 0x03, 0x0F, 0x87, 0xA0, 0x00, 0x00, 0x00 };
+        private static readonly byte[] NativeProductPatchedSig = { 0xB8, 0x02, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90, 0x90 };
+
+        public static bool PatchNativeLauncher(string exePath, Action<string> log = null)
+        {
+            if (!File.Exists(exePath))
+            {
+                log?.Invoke($"[Native Patch] Target binary not found: {exePath}");
+                return false;
+            }
+
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(exePath);
+                int pos = FindSequence(bytes, NativeProductCheckSig);
+                if (pos != -1)
+                {
+                    CreateBackup(exePath, log);
+                    for (int i = 0; i < NativeProductPatchedSig.Length; i++)
+                    {
+                        bytes[pos + i] = NativeProductPatchedSig[i];
+                    }
+                    File.WriteAllBytes(exePath, bytes);
+                    log?.Invoke($"[Native Patch] Applied Diablo III Retail switch patch at 0x{pos:X} (bypassed 'game directory' block).");
+                    return true;
+                }
+                else if (FindSequence(bytes, NativeProductPatchedSig) != -1)
+                {
+                    log?.Invoke($"[Native Patch] Binary is already patched with Diablo III Retail switch.");
+                    return true;
+                }
+                else
+                {
+                    log?.Invoke($"[Native Patch] Signature not found; binary may already be compatible.");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                log?.Invoke($"[Native Patch] Error: {ex.Message}");
+                return false;
+            }
+        }
+
         public static bool PatchBinary(string exePath, LauncherItem item, Action<string> log = null)
         {
             if (!File.Exists(exePath))
@@ -75,7 +122,7 @@ namespace BlizzLauncherArchive
 
         private static void CreateBackup(string path, Action<string> log)
         {
-            string bakPath = path + ".bak";
+            string bakPath = path + ".orig";
             if (!File.Exists(bakPath))
             {
                 File.Copy(path, bakPath, false);

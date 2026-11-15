@@ -29,7 +29,7 @@ namespace BlizzLauncherArchive
             AttachConsole(-1);
             Console.WriteLine("========================================================================");
             Console.WriteLine(" Blizzard Launcher Archive — Standalone & Battle.net Time Machine");
-            Console.WriteLine(" by Elite Level Software (v1.0.1)");
+            Console.WriteLine(" by Elite Level Software (v1.0.5)");
             Console.WriteLine("========================================================================");
 
             string targetDir = @"C:\Games\Blizzard_Launcher_Archive";
@@ -38,6 +38,7 @@ namespace BlizzLauncherArchive
             bool binariesOnly = false;
             bool doBackup = false;
             bool doRetroLaunch = false;
+            bool doNativeLaunch = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -124,6 +125,24 @@ namespace BlizzLauncherArchive
                 {
                     doRetroLaunch = true;
                 }
+                else if (a.Equals("--native-launch", StringComparison.OrdinalIgnoreCase))
+                {
+                    doNativeLaunch = true;
+                }
+            }
+
+            if (doNativeLaunch)
+            {
+                var item = !string.IsNullOrWhiteSpace(versionArg) ? LauncherCatalog.Resolve(versionArg) : LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Diablo3);
+                string launchDir = targetDir;
+                if (!string.IsNullOrWhiteSpace(versionArg) && item != null)
+                {
+                    string candidateDir = Path.Combine(targetDir, item.FolderPrefix);
+                    if (Directory.Exists(candidateDir)) launchDir = candidateDir;
+                }
+                Console.WriteLine($"Initiating Native Launcher execution in: {launchDir}");
+                bool ok = NativeLauncherRunner.LaunchSync(launchDir, item, Console.WriteLine);
+                return ok ? 0 : 1;
             }
 
             if (doRetroLaunch)
@@ -206,6 +225,7 @@ namespace BlizzLauncherArchive
             Console.WriteLine("  --shim [port]                  Start lightweight local Agent shim server for offline authentic launchers.");
             Console.WriteLine("  --patch <file>                 Apply Anti-AutoUpdate patch to bypass dead Blizzard update servers.");
             Console.WriteLine("  --retro-launch [build]         Open the interactive retro launcher player.");
+            Console.WriteLine("  --native-launch [build]        Boot the authentic native Blizzard Launcher binary directly.");
             Console.WriteLine("  --help, -h                     Display this command-line reference.");
         }
 

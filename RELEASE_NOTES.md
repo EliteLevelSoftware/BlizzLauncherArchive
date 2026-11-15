@@ -1,3 +1,27 @@
+# Release Notes: BlizzLauncherArchive v1.0.5
+
+**Release Date:** November 2026  
+**Build:** `v1.0.5` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.5
+
+### 1. Genuine Native Diablo III Launcher Integration
+- **Direct Native Execution:** Boots the authentic 2011/2012 Qt4/WebKit `Blizzard Launcher.exe` binary directly onto the Windows desktop, rendering the original horned skull frame, gothic menus, and classic Diablo III sound and visual assets.
+- **Automated Anti-Hang & Product Bypass Patch:** Automatically patches the client product validation check at runtime (`LauncherPatcher.PatchNativeLauncher`), bypassing dead 2012 update servers and eliminating the legacy `"Please run the game launcher from your game directory"` block.
+- **Embedded Agent 1.x Protocol Shim:** Features a lightweight local HTTP Agent shim (`AgentShimServer`) implementing the classic 2011/2012 JSON REST protocol (`/agent`, `/game/Client`, `/game`, `/install`, `/update`, `/gamesession`), perfectly satisfying client property validation and preventing the `"Failed to retrieve Blizzard Launcher properties"` error.
+- **One-Click Native Launch UI:** Added sleek **⚡ NATIVE LAUNCH** buttons to both the global toolbar and each launcher card in the studio UI, enabling immediate one-click execution.
+- **Smart Launch-Launcher.bat Runner:** Updated the portable runner script to prioritize the native launcher engine with automatic Agent shim orchestration and direct client fallbacks.
+
+### 2. Update Checker & In-Place Updater Polish
+- Corrected update version resolution to use the explicit `1.0.5` release contract, eliminating erroneous "Update Available" indicators when running the latest release.
+- Streamlined automated download and self-restart workflows with SHA-256 integrity verification.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.4
 
 **Release Date:** November 2026  

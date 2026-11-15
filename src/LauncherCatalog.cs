@@ -71,6 +71,8 @@ namespace BlizzLauncherArchive
         };
 
         public string DisplayTitle => $"{Title} (v{Version} Build {BuildNumber})";
+        public string FolderName => $"{Family}_{Category}_{Version}_{BuildNumber}";
+        public string FolderPrefix => FolderName;
         public override string ToString() => DisplayTitle;
     }
 
