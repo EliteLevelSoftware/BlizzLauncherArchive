@@ -6,10 +6,14 @@ namespace BlizzLauncherArchive
     public static class LauncherPatcher
     {
         // Signatures for anti-update bypass across classic Blizzard launchers
-        // 1. Diablo III Launcher.exe (Build 16603 and similar retail):
-        //    State machine dispatcher: test al, al (84 c0) ; jne target (75 6b) ; push 0x556bd0
-        //    Replacing 75 6b (jne) with eb 6b (jmp) skips the UPDATE_AGENT transition
-        private static readonly byte[] D3RetailUpdateSig = { 0x84, 0xC0, 0x75, 0x6B, 0x68, 0xD0, 0x6B, 0x55, 0x00 };
+        // 1. Diablo III Bootstrapper (Build 16603 and retail lineage):
+        //    Pattern A: Stage 6 (START_AGENT) transition to Stage 7 (UPDATE_AGENT) -> change target to 8 (CHECK_CLIENT)
+        //    6a 07 83 ec 1c 8b f4 c7 47 08 07 00 00 00
+        private static readonly byte[] D3Stage6To7Sig = { 0x6A, 0x07, 0x83, 0xEC, 0x1C, 0x8B, 0xF4, 0xC7, 0x47, 0x08, 0x07, 0x00, 0x00, 0x00 };
+
+        //    Pattern B: Stage 8 (CHECK_CLIENT) conditional jump to Stage 11 (UPDATE_CLIENT) -> NOP out (90 90) to force Stage 12 (LAUNCH_CLIENT)
+        //    84 c0 74 0f c6 46 14 01 c7 46 08 0c 00 00 00 6a 0c
+        private static readonly byte[] D3Stage8To11Sig = { 0x84, 0xC0, 0x74, 0x0F, 0xC6, 0x46, 0x14, 0x01, 0xC7, 0x46, 0x08, 0x0C, 0x00, 0x00, 0x00, 0x6A, 0x0C };
 
         public static bool PatchBinary(string exePath, LauncherItem item, Action<string> log = null)
         {
@@ -27,28 +31,26 @@ namespace BlizzLauncherArchive
                 // Diablo III Retail / Standalone Launchers
                 if (item == null || item.Family == LauncherGameFamily.Diablo3)
                 {
-                    int pos = FindSequence(bytes, D3RetailUpdateSig);
-                    if (pos != -1)
+                    // Pattern A: Skip UPDATE_AGENT
+                    int posA = FindSequence(bytes, D3Stage6To7Sig);
+                    if (posA != -1 && bytes[posA + 1] == 0x07)
                     {
-                        if (bytes[pos + 2] == 0x75)
-                        {
-                            CreateBackup(exePath, log);
-                            bytes[pos + 2] = 0xEB; // jne -> jmp
-                            modified = true;
-                            log?.Invoke($"[Anti-Update Patch] Bypassed Agent update check at offset 0x{pos:X} (Original saved as .bak)");
-                        }
+                        CreateBackup(exePath, log);
+                        bytes[posA + 1] = 0x08;  // push 8
+                        bytes[posA + 10] = 0x08; // mov [edi+8], 8 (CHECK_CLIENT)
+                        modified = true;
+                        log?.Invoke($"[Anti-Update Patch] Bypassed Agent network update loop at 0x{posA:X} (Target Stage 7 -> 8)");
                     }
-                    else
+
+                    // Pattern B: Skip UPDATE_CLIENT and force LAUNCH_CLIENT
+                    int posB = FindSequence(bytes, D3Stage8To11Sig);
+                    if (posB != -1 && bytes[posB + 2] == 0x74)
                     {
-                        // Generic fallback pattern for D3 bootstrappers: 84 c0 75 ?? 68 ?? ?? ?? 00
-                        int genericPos = FindPattern(bytes, new byte?[] { 0x84, 0xC0, 0x75, null, 0x68, null, null, null, 0x00, 0xFF, 0x15 });
-                        if (genericPos != -1 && bytes[genericPos + 2] == 0x75)
-                        {
-                            CreateBackup(exePath, log);
-                            bytes[genericPos + 2] = 0xEB;
-                            modified = true;
-                            log?.Invoke($"[Anti-Update Patch] Bypassed bootstrapper update check at offset 0x{genericPos:X}");
-                        }
+                        CreateBackup(exePath, log);
+                        bytes[posB + 2] = 0x90; // nop
+                        bytes[posB + 3] = 0x90; // nop
+                        modified = true;
+                        log?.Invoke($"[Anti-Update Patch] Bypassed Client network update loop at 0x{posB:X} (Direct Launch Client)");
                     }
                 }
 

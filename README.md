@@ -19,13 +19,13 @@
 
 ---
 
-**BlizzLauncherArchive** (v1.0.1) is a standalone, zero-dependency open-source archival suite, retro player, and developer toolkit dedicated to preserving the historical lineage of Blizzard Entertainment standalone game launchers and Battle.net desktop applications.
+**BlizzLauncherArchive** (v1.0.2) is a standalone, zero-dependency open-source archival suite, retro player, and developer toolkit dedicated to preserving the historical lineage of Blizzard Entertainment standalone game launchers and Battle.net desktop applications.
 
 From the 1998 GDI autoplay menus of *StarCraft: Brood War* and the iconic 2011–2014 standalone *Diablo III* launchers to the evolution of the modern *Battle.net Desktop App* (`bna` & `agent`), this application provides a unified interface to browse, inspect, emulate, download, and archive every milestone release.
 
-> ### **[Download `BlizzLauncherArchive.exe` v1.0.1 (Standalone Windows x64 - Zero Dependencies)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/download/v1.0.1/BlizzLauncherArchive.exe)**
-> - **Version:** `v1.0.1`
-> - **SHA-256:** `B408075AD95FF2125667BDC597D520AFDA01E81C78ACD9BBA8F8F22953ADDD62` ([`release/SHA256SUMS.txt`](release/SHA256SUMS.txt))
+> ### **[Download `BlizzLauncherArchive.exe` v1.0.2 (Standalone Windows x64 - Zero Dependencies)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/download/v1.0.2/BlizzLauncherArchive.exe)**
+> - **Version:** `v1.0.2`
+> - **SHA-256:** `D5424CD9E46404A37F9BDF677D3F69A3628C7985C232321FFA3651F20E319F93` ([`release/SHA256SUMS.txt`](release/SHA256SUMS.txt))
 > - **Historical Catalog & Reference:** [`docs/ARCHIVAL_CATALOG.md`](docs/ARCHIVAL_CATALOG.md)
 > - **Server & Launcher Developer Integration Guide:** [`docs/SERVER_INTEGRATION_GUIDE.md`](docs/SERVER_INTEGRATION_GUIDE.md)
 > - Or browse **[GitHub Releases](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)**

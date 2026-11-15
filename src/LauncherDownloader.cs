@@ -121,6 +121,16 @@ namespace BlizzLauncherArchive
             sbBat.AppendLine($"echo  Blizzard Launcher Archive — Offline Preservation Runner");
             sbBat.AppendLine($"echo ========================================================================");
             sbBat.AppendLine("echo Starting launcher...");
+            sbBat.AppendLine();
+            sbBat.AppendLine(":: If extracted standalone Qt client exists in Battle.net cache, launch directly");
+            sbBat.AppendLine("for /d %%D in (\"%ProgramData%\\Battle.net\\Client\\Blizzard Launcher.*\") do (");
+            sbBat.AppendLine("    if exist \"%%D\\Blizzard Launcher.exe\" (");
+            sbBat.AppendLine("        start \"\" /D \"%%D\" \"%%D\\Blizzard Launcher.exe\" --locale=enUS");
+            sbBat.AppendLine("        exit /b 0");
+            sbBat.AppendLine("    )");
+            sbBat.AppendLine(")");
+            sbBat.AppendLine();
+            sbBat.AppendLine(":: Otherwise run the patched offline bootstrapper");
             sbBat.AppendLine($"start \"\" \"%~dp0{item.BinaryFileName}\"");
             await File.WriteAllTextAsync(batPath, sbBat.ToString(), Encoding.UTF8, ct);
 

@@ -1,3 +1,65 @@
+# Release Notes: BlizzLauncherArchive v1.0.2
+
+**Release Date:** November 2026  
+**Build:** `v1.0.2` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.2
+
+### 1. In-App Auto-Updater (Matching D3Forever Architecture)
+- Direct in-app background downloading of release assets (`BlizzLauncherArchive.exe` and `SHA256SUMS.txt`).
+- Real-time progress bar with percentage, downloaded MB, and total MB indicators.
+- Mandatory SHA-256 cryptographic integrity verification before staging the update.
+- Atomic self-replacing batch script that cleanly terminates the current instance, replaces the executable, and restarts the updated application.
+- Dark-themed frameless update dialog matching the exact aesthetic of Diablo 3 Forever.
+
+### 2. Standalone Anti-AutoUpdate & Hang Bypass Engine
+- Resolved the historical bootstrapper hang on `"Updating Blizzard Launcher...."` and `"Updating Blizzard Update Agent...."`.
+- Signature-based patch bypassing legacy Agent calls to dead Blizzard update servers (`enUS.patch.battle.net:1119`).
+- Standalone portable `Launch-Launcher.bat` runner detecting cached Qt4 client instances (`Blizzard Launcher.888`) and launching them offline without tripping modern Battle.net Agent signature validation errors.
+
+### 3. Dedicated Game Tiles by Game Name (8 Independent Hubs)
+- Organized all 24 historical launchers into 8 distinct game family tiles:
+  - **Battle.net Desktop App** (2013–2026)
+  - **Diablo III** (2011–2014)
+  - **World of Warcraft** (2004–2012)
+  - **StarCraft II** (2010–2013)
+  - **StarCraft: Brood War** (1998)
+  - **Warcraft III** (2002)
+  - **Diablo II** (2000–2001)
+  - **Hearthstone** (2013)
+- Custom high-resolution atmospheric banners and dynamic chip measuring for every tile.
+
+---
+
+# Release Notes: BlizzLauncherArchive v1.0.1
+
+**Release Date:** November 2026  
+**Build:** `v1.0.1` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.1
+
+### 1. 8 Dedicated Game Tiles by Game Name
+- Expanded catalog into 8 distinct game family tiles: Battle.net Desktop App, Diablo III, World of Warcraft, StarCraft II, StarCraft: Brood War, Warcraft III, Diablo II, and Hearthstone.
+- Added embedded high-resolution game banners for all 8 game families.
+- Implemented dynamic badge pill measuring for retro play chips.
+
+### 2. Standalone Anti-AutoUpdate Patch Engine
+- Reverse-engineered state machine dispatcher to bypass Agent and client update loops.
+- Added automatic creation of `.bak` untouched binary backups prior to patching.
+
+### 3. Cold Storage Backup by Game Name
+- Individual checkboxes for all 8 game families in the backup dialog.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.0
 
 **Release Date:** November 2026  
@@ -22,7 +84,7 @@
 - **Version Chips & Badges:** Instant visual identification of package types (`Win32 Direct`, `Agent Daemon`, `TACT Bundle`, `Streaming`).
 - **Collapsible Diagnostic Console:** Live execution logging with timestamped download progress, SHA-256 verifications, and cold storage exports.
 
-### 2. Comprehensive Historical Catalog (23 Preserved Builds)
+### 2. Comprehensive Historical Catalog (24 Preserved Builds)
 - **Diablo III Standalone Launchers:**
   - 2011 Friends & Family Beta (`v1.0.0.365`, Build 7447)
   - 2012 Open Beta (`v1.0.0.729`, Build 9359)
