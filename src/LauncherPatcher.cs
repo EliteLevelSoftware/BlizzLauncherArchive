@@ -31,6 +31,21 @@ namespace BlizzLauncherArchive
         private static readonly byte[] NativeInstallCheckSig = { 0x8B, 0xCE, 0xE8, 0x46, 0xEB, 0x09, 0x00, 0x84, 0xC0, 0x0F, 0x84, 0xBF, 0x00, 0x00, 0x00 };
         private static readonly byte[] NativeInstallPatchedSig = { 0x8B, 0xCE, 0xE8, 0x46, 0xEB, 0x09, 0x00, 0x84, 0xC0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
 
+        //    Patch 4: Bypass operation exception dispatch (0x412999)
+        //    80 79 44 00 74 05 E8 CC 1A 0A 00 -> 80 79 44 00 EB 05 E8 CC 1A 0A 00
+        private static readonly byte[] NativeOpEx1Sig = { 0x80, 0x79, 0x44, 0x00, 0x74, 0x05, 0xE8, 0xCC, 0x1A, 0x0A, 0x00 };
+        private static readonly byte[] NativeOpEx1PatchedSig = { 0x80, 0x79, 0x44, 0x00, 0xEB, 0x05, 0xE8, 0xCC, 0x1A, 0x0A, 0x00 };
+
+        //    Patch 5: Bypass operation exception dispatch (0x417616)
+        //    38 41 44 74 05 E8 50 CE 09 00 -> 38 41 44 EB 05 E8 50 CE 09 00
+        private static readonly byte[] NativeOpEx2Sig = { 0x38, 0x41, 0x44, 0x74, 0x05, 0xE8, 0x50, 0xCE, 0x09, 0x00 };
+        private static readonly byte[] NativeOpEx2PatchedSig = { 0x38, 0x41, 0x44, 0xEB, 0x05, 0xE8, 0x50, 0xCE, 0x09, 0x00 };
+
+        //    Patch 6: Neutralize communication error modal dialog invocation (0x417917)
+        //    8B 4D 90 E8 E4 6C 01 00 -> 8B 4D 90 90 90 90 90 90
+        private static readonly byte[] NativeCommDialogSig = { 0x8B, 0x4D, 0x90, 0xE8, 0xE4, 0x6C, 0x01, 0x00 };
+        private static readonly byte[] NativeCommDialogPatchedSig = { 0x8B, 0x4D, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
+
         public static bool PatchNativeLauncher(string exePath, Action<string> log = null)
         {
             if (!File.Exists(exePath))
@@ -93,6 +108,63 @@ namespace BlizzLauncherArchive
                 else if (FindSequence(bytes, NativeInstallPatchedSig) != -1)
                 {
                     log?.Invoke($"[Native Patch] Binary is already patched with 'install found' transition.");
+                }
+
+                // Patch 4: Bypass operation exception dispatch (0x412999)
+                int pos4 = FindSequence(bytes, NativeOpEx1Sig);
+                if (pos4 != -1)
+                {
+                    CreateBackup(exePath, log);
+                    for (int i = 0; i < NativeOpEx1PatchedSig.Length; i++)
+                    {
+                        bytes[pos4 + i] = NativeOpEx1PatchedSig[i];
+                    }
+                    modified = true;
+                    log?.Invoke($"[Native Patch] Applied operation exception bypass (1) at 0x{pos4:X}.");
+                }
+                else if (FindSequence(bytes, NativeOpEx1PatchedSig) != -1)
+                {
+                    log?.Invoke($"[Native Patch] Binary is already patched with operation exception bypass (1).");
+                }
+
+                // Patch 5: Bypass operation exception dispatch (0x417616)
+                int pos5 = FindSequence(bytes, NativeOpEx2Sig);
+                if (pos5 != -1)
+                {
+                    CreateBackup(exePath, log);
+                    for (int i = 0; i < NativeOpEx2PatchedSig.Length; i++)
+                    {
+                        bytes[pos5 + i] = NativeOpEx2PatchedSig[i];
+                    }
+                    modified = true;
+                    log?.Invoke($"[Native Patch] Applied operation exception bypass (2) at 0x{pos5:X}.");
+                }
+                else if (FindSequence(bytes, NativeOpEx2PatchedSig) != -1)
+                {
+                    log?.Invoke($"[Native Patch] Binary is already patched with operation exception bypass (2).");
+                }
+
+                // Patch 6: Neutralize communication error modal dialog call (0x417917)
+                int pos6 = FindSequence(bytes, NativeCommDialogSig);
+                if (pos6 != -1)
+                {
+                    CreateBackup(exePath, log);
+                    for (int i = 0; i < NativeCommDialogPatchedSig.Length; i++)
+                    {
+                        bytes[pos6 + i] = NativeCommDialogPatchedSig[i];
+                    }
+                    modified = true;
+                    log?.Invoke($"[Native Patch] Neutralized communication error modal dialog call at 0x{pos6:X}.");
+                }
+                else if (FindSequence(bytes, NativeCommDialogPatchedSig) != -1)
+                {
+                    log?.Invoke($"[Native Patch] Binary is already patched with communication error dialog bypass.");
+                }
+
+                if (modified)
+                {
+                    File.WriteAllBytes(exePath, bytes);
+                    log?.Invoke($"[Native Patch] All native launcher patches successfully written to {Path.GetFileName(exePath)}.");
                 }
 
                 if (modified)

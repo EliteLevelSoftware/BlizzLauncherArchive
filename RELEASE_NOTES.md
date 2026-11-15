@@ -1,3 +1,21 @@
+# Release Notes: BlizzLauncherArchive v1.0.7
+
+**Release Date:** November 2026  
+**Build:** `v1.0.7` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.7
+
+### 1. Permanent Elimination of "A communication error occurred" Modal
+- **Operation Exception Bypass (Patches 4 & 5):** Neutralized error exception triggers at VA `0x412999` and VA `0x417616` in `Blizzard Launcher.exe`, bypassing failed operation status codes and keeping the launcher in an active operational state.
+- **Communication Error Dialog Neutralization (Patch 6):** NOP'd out the modal message dialog invocation at VA `0x417917`, permanently preventing the *"A communication error occurred, please restart"* popup from blocking the interactive gothic launcher screen.
+- **Agent Protocol Route Prioritization:** Re-ordered request routing in `AgentShimServer` so that `/gamesession`, `/game/Client`, `/repair`, and `/patch` are handled with dedicated schemas before general `/game` queries, preventing session parse failures.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.6
 
 **Release Date:** November 2026  

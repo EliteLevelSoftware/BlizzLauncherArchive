@@ -105,6 +105,10 @@ namespace BlizzLauncherArchive
                 {
                     responseJson = "{\"authorization\":\"1234567890\",\"opt_in_feedback\":true,\"pid\":1234,\"region\":\"us\",\"session\":\"1234567890\",\"state\":1004,\"type\":\"retail\",\"version\":\"1.0.0.524\"}";
                 }
+                else if (rawUrl.StartsWith("/gamesession", StringComparison.OrdinalIgnoreCase))
+                {
+                    responseJson = "{\"state\":1004,\"playable\":true,\"session_id\":\"1234567890\"}";
+                }
                 else if (rawUrl.StartsWith("/game/Client", StringComparison.OrdinalIgnoreCase) || rawUrl.StartsWith("/game/client", StringComparison.OrdinalIgnoreCase))
                 {
                     responseJson = $"{{\"uid\":\"client\",\"patch_url\":\"http://127.0.0.1:{_port}/patch\",\"config\":{{\"supports_multibox\":false,\"patch_url\":\"http://127.0.0.1:{_port}/patch\",\"product\":\"Clnt\",\"update_method\":\"client update\",\"binary_version_path\":\"Blizzard Launcher.exe\",\"binary_launch_path\":\"Blizzard Launcher.exe\",\"preinstalled\":true,\"install_dir\":\"C:/ProgramData/Battle.net/Client\"}}}}";
@@ -121,13 +125,17 @@ namespace BlizzLauncherArchive
                 {
                     responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true,\"download_current\":100,\"download_total\":100,\"update_current\":100,\"update_total\":100}";
                 }
-                else if (rawUrl.StartsWith("/gamesession", StringComparison.OrdinalIgnoreCase))
+                else if (rawUrl.StartsWith("/repair", StringComparison.OrdinalIgnoreCase))
                 {
-                    responseJson = "{}";
+                    responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true}";
+                }
+                else if (rawUrl.StartsWith("/patch", StringComparison.OrdinalIgnoreCase))
+                {
+                    responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true}";
                 }
                 else
                 {
-                    responseJson = "{}";
+                    responseJson = "{\"state\":1004,\"playable\":true}";
                 }
 
                 byte[] buf = Encoding.UTF8.GetBytes(responseJson);

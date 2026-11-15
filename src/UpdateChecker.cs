@@ -24,7 +24,7 @@ namespace BlizzLauncherArchive
 
     public static class UpdateChecker
     {
-        public const string CurrentVersion = "1.0.6";
+        public const string CurrentVersion = "1.0.7";
         private const string GitHubApiReleasesLatest = "https://api.github.com/repos/EliteLevelSoftware/BlizzLauncherArchive/releases/latest";
 
         public static async Task<UpdateInfo> CheckForUpdatesAsync(HttpClient http = null, CancellationToken ct = default)
