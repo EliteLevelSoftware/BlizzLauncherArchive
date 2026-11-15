@@ -17,9 +17,9 @@
     <Company>Elite Level Software</Company>
     <Authors>Elite Level Software</Authors>
     <Copyright>© 2026 Elite Level Software. All rights reserved.</Copyright>
-    <Version>1.0.5</Version>
-    <AssemblyVersion>1.0.5</AssemblyVersion>
-    <FileVersion>1.0.5</FileVersion>
+    <Version>1.0.6</Version>
+    <AssemblyVersion>1.0.6</AssemblyVersion>
+    <FileVersion>1.0.6</FileVersion>
     <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <StartupObject>BlizzLauncherArchive.Program</StartupObject>
   </PropertyGroup>

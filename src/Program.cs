@@ -110,12 +110,14 @@ namespace BlizzLauncherArchive
                 }
                 else if ((a.Equals("--dir", StringComparison.OrdinalIgnoreCase) || a.Equals("-d", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
                 {
-                    targetDir = Path.GetFullPath(args[++i]);
+                    string rawPath = args[++i].Trim('"', '\'', ' ');
+                    targetDir = Path.GetFullPath(rawPath);
                 }
                 else if (a.Equals("--backup", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
                 {
                     doBackup = true;
-                    targetDir = Path.GetFullPath(args[++i]);
+                    string rawPath = args[++i].Trim('"', '\'', ' ');
+                    targetDir = Path.GetFullPath(rawPath);
                 }
                 else if (a.Equals("--binaries-only", StringComparison.OrdinalIgnoreCase))
                 {
@@ -134,12 +136,7 @@ namespace BlizzLauncherArchive
             if (doNativeLaunch)
             {
                 var item = !string.IsNullOrWhiteSpace(versionArg) ? LauncherCatalog.Resolve(versionArg) : LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Diablo3);
-                string launchDir = targetDir;
-                if (!string.IsNullOrWhiteSpace(versionArg) && item != null)
-                {
-                    string candidateDir = Path.Combine(targetDir, item.FolderPrefix);
-                    if (Directory.Exists(candidateDir)) launchDir = candidateDir;
-                }
+                string launchDir = NativeLauncherRunner.ResolveGameDirectory(targetDir, item);
                 Console.WriteLine($"Initiating Native Launcher execution in: {launchDir}");
                 bool ok = NativeLauncherRunner.LaunchSync(launchDir, item, Console.WriteLine);
                 return ok ? 0 : 1;

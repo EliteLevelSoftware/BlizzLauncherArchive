@@ -1,3 +1,29 @@
+# Release Notes: BlizzLauncherArchive v1.0.6
+
+**Release Date:** November 2026  
+**Build:** `v1.0.6` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.6
+
+### 1. Permanent Fix for "Failed to retrieve Blizzard Launcher properties"
+- **Properties Dialog Bypass (Patch 2):** Applied an automatic binary patch at VA `0x4116de` in `Blizzard Launcher.exe` (`LauncherPatcher.PatchNativeLauncher`), bypassing the conditional jump to `0x411712`. This permanently eliminates the modal error dialog `"Failed to retrieve Blizzard Launcher properties"` and ensures uninterrupted execution.
+- **State Machine "Install Found" Transition (Patch 3):** Applied binary patch at VA `0x4115e8c` to force the `install found` signal (`0x5671e4`), seamlessly transitioning the client from the splash screen to the full authentic `820x650` gothic launcher window with the `PLAY` button enabled.
+- **Smart Desktop Window Watcher:** Implemented a Win32 window supervisor in `NativeLauncherRunner` that automatically monitors the launched process, brings the `820x650` authentic Diablo III launcher window to the foreground, and hides any lingering splash frame.
+
+### 2. Path & Runner Hardening
+- **Smart Directory Resolver:** `NativeLauncherRunner.ResolveGameDirectory` intelligently resolves target folders across `Diablo3_Retail_1.1.0.1272_16603` and related lineage builds, preventing directory mismatches.
+- **Trailing Slash CMD Escaping Fix:** Fixed an issue where `%~dp0` trailing backslashes escaped the closing quote in Windows batch scripts, ensuring `Launch-Launcher.bat` executes cleanly from any directory.
+- **Expanded Fallback Discovery:** `Launch-Launcher.bat` now scans local folders, parent directories, and `Downloads` to automatically locate `BlizzLauncherArchive.exe`.
+
+### 3. In-App Updater & Version Alignment
+- Aligned update contract to `1.0.6`, ensuring accurate version comparison and smooth in-app updates with SHA-256 verification.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.5
 
 **Release Date:** November 2026  

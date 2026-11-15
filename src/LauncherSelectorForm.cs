@@ -459,8 +459,7 @@ namespace BlizzLauncherArchive
                 {
                     string targetDir = _txtTargetLocation?.Text ?? @"C:\Games\Blizzard_Launcher_Archive";
                     var item = _selectedD3 ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Diablo3);
-                    string specificDir = Path.Combine(targetDir, item.FolderPrefix);
-                    string runDir = Directory.Exists(specificDir) ? specificDir : targetDir;
+                    string runDir = NativeLauncherRunner.ResolveGameDirectory(targetDir, item);
                     _ = NativeLauncherRunner.LaunchAsync(runDir, item, AppendLog);
                     return;
                 }
@@ -1220,8 +1219,7 @@ namespace BlizzLauncherArchive
                     if (target != null)
                     {
                         string targetDir = _txtTargetLocation?.Text ?? @"C:\Games\Blizzard_Launcher_Archive";
-                        string specificDir = Path.Combine(targetDir, target.FolderPrefix);
-                        string runDir = Directory.Exists(specificDir) ? specificDir : targetDir;
+                        string runDir = NativeLauncherRunner.ResolveGameDirectory(targetDir, target);
                         _ = NativeLauncherRunner.LaunchAsync(runDir, target, AppendLog);
                     }
                     return;
