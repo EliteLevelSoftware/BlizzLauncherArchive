@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>BlizzLauncherArchive</AssemblyName>
+    <Product>BlizzLauncherArchive</Product>
+    <AssemblyTitle>BlizzLauncherArchive</AssemblyTitle>
+    <Company>Elite Level Software</Company>
+    <Authors>Elite Level Software</Authors>
+    <Copyright>© 2026 Elite Level Software. All rights reserved.</Copyright>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+    <StartupObject>BlizzLauncherArchive.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\app_icon.ico" LogicalName="app_icon.ico" />
+    <EmbeddedResource Include="Assets\app_logo.png" LogicalName="app_logo.png" />
+    <EmbeddedResource Include="Assets\bnet_banner.jpg" LogicalName="bnet_banner.jpg" />
+    <EmbeddedResource Include="Assets\d3_banner.jpg" LogicalName="d3_banner.jpg" />
+    <EmbeddedResource Include="Assets\wow_banner.jpg" LogicalName="wow_banner.jpg" />
+    <EmbeddedResource Include="Assets\sc2_banner.jpg" LogicalName="sc2_banner.jpg" />
+    <EmbeddedResource Include="Assets\classic_banner.jpg" LogicalName="classic_banner.jpg" />
+  </ItemGroup>
+
+</Project>
