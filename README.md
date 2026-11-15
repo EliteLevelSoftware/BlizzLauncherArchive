@@ -1,27 +1,34 @@
+<div align="center">
+
+<img src="docs/assets/app_logo.png" alt="BlizzLauncherArchive Logo" width="140" />
+
 # BlizzLauncherArchive
+### The Historical Archival Suite & Retro Player for Blizzard & Battle.net Launchers
+**by Elite Level Software**
 
-<p align="center">
-  <img src="docs/assets/app_logo.png" alt="BlizzLauncherArchive Logo" width="180" />
-</p>
+[![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)
+[![.NET](https://img.shields.io/badge/Built%20With-.NET%2010-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/EliteLevelSoftware/BlizzLauncherArchive?style=flat-square&color=gold)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)
+[![Downloads](https://img.shields.io/github/downloads/EliteLevelSoftware/BlizzLauncherArchive/total?style=flat-square&color=gold&label=Downloads)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)
+[![Downloads (latest)](https://img.shields.io/github/downloads/EliteLevelSoftware/BlizzLauncherArchive/latest/total?style=flat-square&color=gold&label=Latest%20Release)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/latest)
 
-<p align="center">
-  <strong>The Ultimate Historical Archival Suite & Retro Player for Blizzard & Battle.net Launchers</strong>
-</p>
+**[⬇️ Download the latest version](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/latest)**
 
-<p align="center">
-  <a href="https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases"><img src="https://img.shields.io/github/v/release/EliteLevelSoftware/BlizzLauncherArchive?color=blue&label=version" alt="Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
-  <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-10.0-purple.svg" alt=".NET 10"></a>
-  <a href="https://github.com/EliteLevelSoftware/BlizzLauncherArchive"><img src="https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg" alt="Platform"></a>
-</p>
+</div>
 
 ---
 
-## Overview
-
-**BlizzLauncherArchive** is a comprehensive archival tool and retro emulation player dedicated to preserving the historical lineage of Blizzard Entertainment standalone game launchers and Battle.net desktop applications.
+**BlizzLauncherArchive** (v1.0.0) is a standalone, zero-dependency open-source archival suite, retro player, and developer toolkit dedicated to preserving the historical lineage of Blizzard Entertainment standalone game launchers and Battle.net desktop applications.
 
 From the 1998 GDI autoplay menus of *StarCraft: Brood War* and the iconic 2011–2014 standalone *Diablo III* launchers to the evolution of the modern *Battle.net Desktop App* (`bna` & `agent`), this application provides a unified interface to browse, inspect, emulate, download, and archive every milestone release.
+
+> ### **[Download `BlizzLauncherArchive.exe` v1.0.0 (Standalone Windows x64 - Zero Dependencies)](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases/download/v1.0.0/BlizzLauncherArchive.exe)**
+> - **Version:** `v1.0.0`
+> - **SHA-256:** `39283e0e5b064138830626f5db149db5e8e7608a83a26414116cd480f7a0e468` ([`release/SHA256SUMS.txt`](release/SHA256SUMS.txt))
+> - **Historical Catalog & Reference:** [`docs/ARCHIVAL_CATALOG.md`](docs/ARCHIVAL_CATALOG.md)
+> - **Server & Launcher Developer Integration Guide:** [`docs/SERVER_INTEGRATION_GUIDE.md`](docs/SERVER_INTEGRATION_GUIDE.md)
+> - Or browse **[GitHub Releases](https://github.com/EliteLevelSoftware/BlizzLauncherArchive/releases)**
 
 ---
 
