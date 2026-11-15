@@ -9,8 +9,11 @@ namespace BlizzLauncherArchive
         BattleNet,
         Diablo3,
         WoW,
-        StarCraft,
-        Classic
+        StarCraft2,
+        StarCraftBroodWar,
+        Warcraft3,
+        Diablo2,
+        Hearthstone
     }
 
     public enum LauncherCategory
@@ -53,6 +56,19 @@ namespace BlizzLauncherArchive
         public bool IsTactCasc { get; init; } = false;
         public string BuildConfigHash { get; init; } = string.Empty;
         public string CdnConfigHash { get; init; } = string.Empty;
+
+        public string GameName => Family switch
+        {
+            LauncherGameFamily.BattleNet => "Battle.net Desktop App",
+            LauncherGameFamily.Diablo3 => "Diablo III",
+            LauncherGameFamily.WoW => "World of Warcraft",
+            LauncherGameFamily.StarCraft2 => "StarCraft II",
+            LauncherGameFamily.StarCraftBroodWar => "StarCraft: Brood War",
+            LauncherGameFamily.Warcraft3 => "Warcraft III",
+            LauncherGameFamily.Diablo2 => "Diablo II",
+            LauncherGameFamily.Hearthstone => "Hearthstone",
+            _ => Family.ToString()
+        };
 
         public string DisplayTitle => $"{Title} (v{Version} Build {BuildNumber})";
         public override string ToString() => DisplayTitle;
@@ -338,12 +354,12 @@ namespace BlizzLauncherArchive
             },
 
             // =========================================================================
-            // 4. STARCRAFT II & BROOD WAR LAUNCHERS
+            // 4. STARCRAFT II LAUNCHERS
             // =========================================================================
             new()
             {
                 Id = "sc2-hots-2.1",
-                Family = LauncherGameFamily.StarCraft,
+                Family = LauncherGameFamily.StarCraft2,
                 Category = LauncherCategory.Expansion,
                 Title = "StarCraft II: Heart of the Swarm Launcher",
                 Version = "2.1.4",
@@ -358,7 +374,7 @@ namespace BlizzLauncherArchive
             new()
             {
                 Id = "sc2-wol-1.5",
-                Family = LauncherGameFamily.StarCraft,
+                Family = LauncherGameFamily.StarCraft2,
                 Category = LauncherCategory.Retail,
                 Title = "StarCraft II: Wings of Liberty Launcher",
                 Version = "1.5.4",
@@ -370,10 +386,14 @@ namespace BlizzLauncherArchive
                 ApproxSizeBytes = 2350000,
                 ProductCode = "s2"
             },
+
+            // =========================================================================
+            // 5. STARCRAFT: BROOD WAR LAUNCHERS
+            // =========================================================================
             new()
             {
                 Id = "sc-broodwar-1.16",
-                Family = LauncherGameFamily.StarCraft,
+                Family = LauncherGameFamily.StarCraftBroodWar,
                 Category = LauncherCategory.Retail,
                 Title = "StarCraft: Brood War Classic Launcher",
                 Version = "1.16.1",
@@ -387,12 +407,12 @@ namespace BlizzLauncherArchive
             },
 
             // =========================================================================
-            // 5. CLASSIC STRATEGY & GATEWAY LAUNCHERS
+            // 6. WARCRAFT III LAUNCHERS
             // =========================================================================
             new()
             {
                 Id = "w3-frozen-throne-1.26",
-                Family = LauncherGameFamily.Classic,
+                Family = LauncherGameFamily.Warcraft3,
                 Category = LauncherCategory.Expansion,
                 Title = "Warcraft III: The Frozen Throne Launcher",
                 Version = "1.26a",
@@ -407,7 +427,7 @@ namespace BlizzLauncherArchive
             new()
             {
                 Id = "w3-reign-of-chaos-1.06",
-                Family = LauncherGameFamily.Classic,
+                Family = LauncherGameFamily.Warcraft3,
                 Category = LauncherCategory.Retail,
                 Title = "Warcraft III: Reign of Chaos Classic Launcher",
                 Version = "1.06",
@@ -419,10 +439,14 @@ namespace BlizzLauncherArchive
                 ApproxSizeBytes = 1350000,
                 ProductCode = "w3"
             },
+
+            // =========================================================================
+            // 7. DIABLO II LAUNCHERS
+            // =========================================================================
             new()
             {
                 Id = "d2-lod-1.14d",
-                Family = LauncherGameFamily.Classic,
+                Family = LauncherGameFamily.Diablo2,
                 Category = LauncherCategory.Expansion,
                 Title = "Diablo II: Lord of Destruction Classic Launcher",
                 Version = "1.14d",
@@ -434,10 +458,14 @@ namespace BlizzLauncherArchive
                 ApproxSizeBytes = 1150000,
                 ProductCode = "d2"
             },
+
+            // =========================================================================
+            // 8. HEARTHSTONE LAUNCHERS
+            // =========================================================================
             new()
             {
                 Id = "hs-closed-beta-2013",
-                Family = LauncherGameFamily.Classic,
+                Family = LauncherGameFamily.Hearthstone,
                 Category = LauncherCategory.Beta,
                 Title = "Hearthstone Closed Beta Standalone Launcher",
                 Version = "1.0.0",

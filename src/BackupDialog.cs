@@ -23,7 +23,10 @@ namespace BlizzLauncherArchive
         private CheckBox _chkD3;
         private CheckBox _chkWow;
         private CheckBox _chkSc2;
-        private CheckBox _chkClassic;
+        private CheckBox _chkSc1;
+        private CheckBox _chkWc3;
+        private CheckBox _chkD2;
+        private CheckBox _chkHearthstone;
         private ProgressBar _pbOverall;
         private Label _lblStatus;
         private TextBox _txtLog;
@@ -108,31 +111,41 @@ namespace BlizzLauncherArchive
             // Game family selection checkboxes
             var grpFamilies = new GroupBox
             {
-                Text = "SELECT GAME FAMILIES TO INCLUDE IN BACKUP",
+                Text = "SELECT GAMES TO INCLUDE IN COLD STORAGE BACKUP",
                 Location = new Point(20, 115),
-                Size = new Size(790, 85),
+                Size = new Size(790, 100),
                 ForeColor = Color.FromArgb(240, 195, 75),
                 BackColor = Color.FromArgb(22, 26, 34)
             };
-            _chkBnet = new CheckBox { Text = "Battle.net Desktop App", Checked = true, Location = new Point(20, 30), AutoSize = true, ForeColor = Color.White };
-            _chkD3 = new CheckBox { Text = "Diablo III Standalone", Checked = true, Location = new Point(190, 30), AutoSize = true, ForeColor = Color.White };
-            _chkWow = new CheckBox { Text = "World of Warcraft", Checked = true, Location = new Point(350, 30), AutoSize = true, ForeColor = Color.White };
-            _chkSc2 = new CheckBox { Text = "StarCraft Series", Checked = true, Location = new Point(500, 30), AutoSize = true, ForeColor = Color.White };
-            _chkClassic = new CheckBox { Text = "Classic Strategy (War3/D2)", Checked = true, Location = new Point(630, 30), AutoSize = true, ForeColor = Color.White };
+            _chkBnet = new CheckBox { Text = "Battle.net Desktop App", Checked = true, Location = new Point(20, 28), AutoSize = true, ForeColor = Color.White };
+            _chkD3 = new CheckBox { Text = "Diablo III", Checked = true, Location = new Point(210, 28), AutoSize = true, ForeColor = Color.White };
+            _chkWow = new CheckBox { Text = "World of Warcraft", Checked = true, Location = new Point(340, 28), AutoSize = true, ForeColor = Color.White };
+            _chkSc2 = new CheckBox { Text = "StarCraft II", Checked = true, Location = new Point(510, 28), AutoSize = true, ForeColor = Color.White };
+
+            _chkSc1 = new CheckBox { Text = "StarCraft: Brood War", Checked = true, Location = new Point(20, 60), AutoSize = true, ForeColor = Color.White };
+            _chkWc3 = new CheckBox { Text = "Warcraft III", Checked = true, Location = new Point(210, 60), AutoSize = true, ForeColor = Color.White };
+            _chkD2 = new CheckBox { Text = "Diablo II", Checked = true, Location = new Point(340, 60), AutoSize = true, ForeColor = Color.White };
+            _chkHearthstone = new CheckBox { Text = "Hearthstone", Checked = true, Location = new Point(510, 60), AutoSize = true, ForeColor = Color.White };
 
             _chkBnet.CheckedChanged += (s, e) => RefreshInventory();
             _chkD3.CheckedChanged += (s, e) => RefreshInventory();
             _chkWow.CheckedChanged += (s, e) => RefreshInventory();
             _chkSc2.CheckedChanged += (s, e) => RefreshInventory();
-            _chkClassic.CheckedChanged += (s, e) => RefreshInventory();
+            _chkSc1.CheckedChanged += (s, e) => RefreshInventory();
+            _chkWc3.CheckedChanged += (s, e) => RefreshInventory();
+            _chkD2.CheckedChanged += (s, e) => RefreshInventory();
+            _chkHearthstone.CheckedChanged += (s, e) => RefreshInventory();
 
-            grpFamilies.Controls.AddRange(new Control[] { _chkBnet, _chkD3, _chkWow, _chkSc2, _chkClassic });
+            grpFamilies.Controls.AddRange(new Control[] {
+                _chkBnet, _chkD3, _chkWow, _chkSc2,
+                _chkSc1, _chkWc3, _chkD2, _chkHearthstone
+            });
 
             _chkBinariesOnly = new CheckBox
             {
                 Text = "⚡ Fast Binaries Only (Skip multi-megabyte SetupWin.mpq / raw skin archives)",
                 Checked = false,
-                Location = new Point(20, 215),
+                Location = new Point(20, 226),
                 AutoSize = true,
                 ForeColor = Color.LightSkyBlue,
                 Font = new Font("Segoe UI", 9.5f, FontStyle.Bold)
@@ -216,8 +229,11 @@ namespace BlizzLauncherArchive
             if (_chkBnet.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.BattleNet));
             if (_chkD3.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.Diablo3));
             if (_chkWow.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.WoW));
-            if (_chkSc2.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.StarCraft));
-            if (_chkClassic.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.Classic));
+            if (_chkSc2.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.StarCraft2));
+            if (_chkSc1.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.StarCraftBroodWar));
+            if (_chkWc3.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.Warcraft3));
+            if (_chkD2.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.Diablo2));
+            if (_chkHearthstone.Checked) list.AddRange(LauncherCatalog.AllLaunchers.Where(x => x.Family == LauncherGameFamily.Hearthstone));
             return list;
         }
 

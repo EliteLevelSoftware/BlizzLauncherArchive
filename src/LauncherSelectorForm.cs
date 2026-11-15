@@ -43,21 +43,30 @@ namespace BlizzLauncherArchive
         private readonly Image _d3BannerImg;
         private readonly Image _wowBannerImg;
         private readonly Image _sc2BannerImg;
-        private readonly Image _classicBannerImg;
+        private readonly Image _sc1BannerImg;
+        private readonly Image _wc3BannerImg;
+        private readonly Image _d2BannerImg;
+        private readonly Image _hearthstoneBannerImg;
 
         // Family Selected Items
         private LauncherItem _selectedBnet;
         private LauncherItem _selectedD3;
         private LauncherItem _selectedWow;
         private LauncherItem _selectedSc2;
-        private LauncherItem _selectedClassic;
+        private LauncherItem _selectedSc1;
+        private LauncherItem _selectedWc3;
+        private LauncherItem _selectedD2;
+        private LauncherItem _selectedHearthstone;
 
         // Expansion States
         private bool _bnetExpanded = false;
         private bool _d3Expanded = false;
         private bool _wowExpanded = false;
         private bool _sc2Expanded = false;
-        private bool _classicExpanded = false;
+        private bool _sc1Expanded = false;
+        private bool _wc3Expanded = false;
+        private bool _d2Expanded = false;
+        private bool _hearthstoneExpanded = false;
         private bool _logExpanded = false;
         private bool _isArchiving = false;
         private bool _chkFastBinariesOnly = false;
@@ -114,24 +123,33 @@ namespace BlizzLauncherArchive
 
         public LauncherSelectorForm()
         {
-            // Initial item selections (default to newest/milestone in each family)
+            // Initial item selections (default to newest/milestone in each game family)
             _selectedBnet = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.BattleNet && x.Id == "bnet-latest-2.53.8")
                 ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.BattleNet);
             _selectedD3 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.Diablo3 && x.Id == "d3-retail-1.0.8a")
                 ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Diablo3);
             _selectedWow = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.WoW && x.Id == "wow-mop-5.0.4")
                 ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.WoW);
-            _selectedSc2 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.StarCraft && x.Id == "sc2-hots-2.0.4")
-                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.StarCraft);
-            _selectedClassic = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.Classic && x.Id == "wc3-roc-1.00")
-                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Classic);
+            _selectedSc2 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.StarCraft2 && x.Id == "sc2-hots-2.0.4")
+                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.StarCraft2);
+            _selectedSc1 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.StarCraftBroodWar)
+                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.StarCraftBroodWar);
+            _selectedWc3 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.Warcraft3 && x.Id == "wc3-tft-1.26a")
+                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Warcraft3);
+            _selectedD2 = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.Diablo2)
+                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Diablo2);
+            _selectedHearthstone = LauncherCatalog.AllLaunchers.FirstOrDefault(x => x.Family == LauncherGameFamily.Hearthstone)
+                ?? LauncherCatalog.AllLaunchers.First(x => x.Family == LauncherGameFamily.Hearthstone);
 
             _logoImg = LoadEmbeddedImage("app_logo.png");
             _bnetBannerImg = LoadEmbeddedImage("bnet_banner.jpg");
             _d3BannerImg = LoadEmbeddedImage("d3_banner.jpg");
             _wowBannerImg = LoadEmbeddedImage("wow_banner.jpg");
             _sc2BannerImg = LoadEmbeddedImage("sc2_banner.jpg");
-            _classicBannerImg = LoadEmbeddedImage("classic_banner.jpg");
+            _sc1BannerImg = LoadEmbeddedImage("sc1_banner.jpg");
+            _wc3BannerImg = LoadEmbeddedImage("wc3_banner.jpg");
+            _d2BannerImg = LoadEmbeddedImage("d2_banner.jpg");
+            _hearthstoneBannerImg = LoadEmbeddedImage("hearthstone_banner.jpg");
 
             var appIcon = LoadEmbeddedIcon("app_icon.ico");
             if (appIcon != null)
@@ -740,7 +758,7 @@ namespace BlizzLauncherArchive
                 e.Graphics.DrawLine(framePen, _mainScrollPanel.Width - 1, 0, _mainScrollPanel.Width - 1, _mainScrollPanel.Height);
             };
 
-            // Setup the 5 Game Family Contexts
+            // Setup the 8 Game Family Contexts (By Game Name)
             SetupFamilyTiles();
 
             Controls.Add(_mainScrollPanel);
@@ -754,7 +772,7 @@ namespace BlizzLauncherArchive
             _tiles.Add(new FamilyTileContext
             {
                 Family = LauncherGameFamily.BattleNet,
-                BadgeTitle = "PLATFORM • 8 BUILDS",
+                BadgeTitle = "BATTLE.NET • 8 BUILDS",
                 AccentColor = Color.FromArgb(56, 139, 253),
                 RightBgColor = Color.FromArgb(7, 12, 24),
                 BannerImage = _bnetBannerImg,
@@ -767,7 +785,7 @@ namespace BlizzLauncherArchive
             _tiles.Add(new FamilyTileContext
             {
                 Family = LauncherGameFamily.Diablo3,
-                BadgeTitle = "STANDALONE • 4 BUILDS",
+                BadgeTitle = "DIABLO III • 4 BUILDS",
                 AccentColor = Color.FromArgb(239, 68, 68),
                 RightBgColor = Color.FromArgb(18, 8, 9),
                 BannerImage = _d3BannerImg,
@@ -780,7 +798,7 @@ namespace BlizzLauncherArchive
             _tiles.Add(new FamilyTileContext
             {
                 Family = LauncherGameFamily.WoW,
-                BadgeTitle = "EXPANSIONS • 5 BUILDS",
+                BadgeTitle = "WORLD OF WARCRAFT • 5 BUILDS",
                 AccentColor = Color.FromArgb(34, 197, 94),
                 RightBgColor = Color.FromArgb(12, 18, 12),
                 BannerImage = _wowBannerImg,
@@ -792,8 +810,8 @@ namespace BlizzLauncherArchive
 
             _tiles.Add(new FamilyTileContext
             {
-                Family = LauncherGameFamily.StarCraft,
-                BadgeTitle = "STRATEGY • 4 BUILDS",
+                Family = LauncherGameFamily.StarCraft2,
+                BadgeTitle = "STARCRAFT II • 2 BUILDS",
                 AccentColor = Color.FromArgb(14, 165, 233),
                 RightBgColor = Color.FromArgb(8, 16, 24),
                 BannerImage = _sc2BannerImg,
@@ -805,15 +823,54 @@ namespace BlizzLauncherArchive
 
             _tiles.Add(new FamilyTileContext
             {
-                Family = LauncherGameFamily.Classic,
-                BadgeTitle = "LEGACY • 2 BUILDS",
+                Family = LauncherGameFamily.StarCraftBroodWar,
+                BadgeTitle = "STARCRAFT: BROOD WAR • 1 BUILD",
+                AccentColor = Color.FromArgb(16, 185, 129),
+                RightBgColor = Color.FromArgb(8, 20, 16),
+                BannerImage = _sc1BannerImg,
+                GetSelected = () => _selectedSc1,
+                SetSelected = (item) => _selectedSc1 = item,
+                GetExpanded = () => _sc1Expanded,
+                SetExpanded = (exp) => _sc1Expanded = exp
+            });
+
+            _tiles.Add(new FamilyTileContext
+            {
+                Family = LauncherGameFamily.Warcraft3,
+                BadgeTitle = "WARCRAFT III • 2 BUILDS",
+                AccentColor = Color.FromArgb(168, 85, 247),
+                RightBgColor = Color.FromArgb(18, 10, 24),
+                BannerImage = _wc3BannerImg,
+                GetSelected = () => _selectedWc3,
+                SetSelected = (item) => _selectedWc3 = item,
+                GetExpanded = () => _wc3Expanded,
+                SetExpanded = (exp) => _wc3Expanded = exp
+            });
+
+            _tiles.Add(new FamilyTileContext
+            {
+                Family = LauncherGameFamily.Diablo2,
+                BadgeTitle = "DIABLO II • 1 BUILD",
+                AccentColor = Color.FromArgb(234, 88, 12),
+                RightBgColor = Color.FromArgb(20, 10, 6),
+                BannerImage = _d2BannerImg,
+                GetSelected = () => _selectedD2,
+                SetSelected = (item) => _selectedD2 = item,
+                GetExpanded = () => _d2Expanded,
+                SetExpanded = (exp) => _d2Expanded = exp
+            });
+
+            _tiles.Add(new FamilyTileContext
+            {
+                Family = LauncherGameFamily.Hearthstone,
+                BadgeTitle = "HEARTHSTONE • 1 BUILD",
                 AccentColor = Color.FromArgb(245, 158, 11),
-                RightBgColor = Color.FromArgb(18, 14, 8),
-                BannerImage = _classicBannerImg,
-                GetSelected = () => _selectedClassic,
-                SetSelected = (item) => _selectedClassic = item,
-                GetExpanded = () => _classicExpanded,
-                SetExpanded = (exp) => _classicExpanded = exp
+                RightBgColor = Color.FromArgb(20, 16, 6),
+                BannerImage = _hearthstoneBannerImg,
+                GetSelected = () => _selectedHearthstone,
+                SetSelected = (item) => _selectedHearthstone = item,
+                GetExpanded = () => _hearthstoneExpanded,
+                SetExpanded = (exp) => _hearthstoneExpanded = exp
             });
 
             int startY = 4;
@@ -898,13 +955,14 @@ namespace BlizzLauncherArchive
                     e.Graphics.FillRectangle(fadeBrush, fadeRect);
                 }
 
-                // Family Pill Badge in upper left
+                // Game Family Pill Badge in upper left
                 int buildCount = LauncherCatalog.AllLaunchers.Count(x => x.Family == ctx.Family);
-                var badgeRect = new Rectangle(16, 12, 168, 20);
-                using (var bPath = CreateRoundRect(badgeRect, 3))
-                using (var bFill = new SolidBrush(ctx.AccentColor))
                 using (var bFont = new Font("Segoe UI", 7.5f, FontStyle.Bold))
                 {
+                    int badgeW = Math.Max(168, (int)Math.Ceiling(e.Graphics.MeasureString(ctx.BadgeTitle, bFont).Width) + 18);
+                    var badgeRect = new Rectangle(16, 12, badgeW, 20);
+                    using var bPath = CreateRoundRect(badgeRect, 3);
+                    using var bFill = new SolidBrush(ctx.AccentColor);
                     e.Graphics.FillPath(bFill, bPath);
                     var sfBadge = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
                     e.Graphics.DrawString(ctx.BadgeTitle, bFont, Brushes.Black, badgeRect, sfBadge);
@@ -1150,7 +1208,8 @@ namespace BlizzLauncherArchive
                 int count = LauncherCatalog.AllLaunchers.Count(x => x.Family == ctx.Family);
                 using var hdrFont = new Font("Segoe UI", 8.25f, FontStyle.Bold);
                 using var hdrBrush = new SolidBrush(Color.FromArgb(154, 166, 191));
-                e.Graphics.DrawString($"CHOOSE {ctx.Family.ToString().ToUpperInvariant()} BUILD ({count} BUILDS ARCHIVED):", hdrFont, hdrBrush, 20, 11);
+                string gameName = (ctx.GetSelected()?.GameName ?? ctx.Family.ToString()).ToUpperInvariant();
+                e.Graphics.DrawString($"CHOOSE {gameName} BUILD ({count} BUILDS ARCHIVED):", hdrFont, hdrBrush, 20, 11);
 
                 // Draw segmented category tabs
                 for (int i = 0; i < ctx.TabNames.Count; i++)

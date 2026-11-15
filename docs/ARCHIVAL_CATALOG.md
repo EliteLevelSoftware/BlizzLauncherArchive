@@ -1,31 +1,10 @@
 # BlizzLauncherArchive Historical Catalog
 
-Complete technical reference and catalog breakdown for all 23 milestone Blizzard game and platform launchers preserved in **BlizzLauncherArchive**.
+Complete technical reference and catalog breakdown for all 24 milestone Blizzard game and platform launchers preserved in **BlizzLauncherArchive**.
 
 ---
 
-## 1. Diablo III Standalone Launchers (2011–2014)
-
-Before the Battle.net Desktop App became mandatory in early 2014, Diablo III operated through standalone Win32 client launchers (`Diablo III Launcher.exe` and `Diablo III Setup.exe`). These executables loaded graphics, sound effects, parchment dialog frames, and news feeds from bundled and streaming `SetupWin.mpq` archives.
-
-| ID | Version / Build | Era | Package Type | Size | SHA-256 Checksum |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `d3-beta-1.0.0.7447` | v1.0.0.365 (Build 7447) | Sep 2011 (F&F Beta) | Standalone Win32 Exe | ~1.8 MB | Verified Authenticode |
-| `d3-beta-1.0.0.9359` | v1.0.0.729 (Build 9359) | Apr 2012 (Open Beta) | Standalone Win32 Exe | ~1.9 MB | `9e8a7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e` |
-| `d3-retail-1.0.8a` | v1.1.0.1272 (Build 16603) | May 2012 – May 2013 | Standalone Win32 Exe | 2,043,584 B | `321f879cfca1df815a510a70198c690d719543e57fcaabdc1ba43530c1be7d28` |
-| `d3-ros-beta-21962` | v1.4.0.1820 (Build 21962) | Nov 2013 (RoS Beta) | Hybrid Agent/Win32 | ~2.1 MB | Verified Authenticode |
-
-### Historical Technical Notes:
-- **`Diablo III Launcher.exe`:** Win32 GUI client with direct DirectX/GDI rendering. Initialized blizzard network sockets and fetched localized feed strings from `launcher.worldofwarcraft.com` and `us.launcher.battle.net`.
-- **`SetupWin.mpq`:** 14.4 MB MPQ container holding raw UI layout XML, ambient theme audio (`D3_Theme_Title.ogg`), button state sprites, and fonts (`Exocet`, `BlizQuadrata`).
-- **Command Line Switches:**
-  - `-launch`: Directly starts `Diablo III.exe` bypassing launcher verification.
-  - `-locale <LOCALE>`: Forces client locale (`enUS`, `deDE`, `frFR`, `esMX`, `koKR`, `zhTW`).
-  - `-uid <PRODUCT_UID>`: Binds the launcher instance to `d3_beta` or `d3_retail`.
-
----
-
-## 2. Battle.net Desktop App Platform (`bna` & `agent`)
+## 1. Battle.net Desktop App Platform (`bna` & `agent`)
 
 The official desktop client platform developed by Blizzard Entertainment to manage authentication, background CDN patching, game downloads, social chat, and multi-game streaming.
 
@@ -40,9 +19,18 @@ The official desktop client platform developed by Blizzard Entertainment to mana
 | `bnet-agent-legacy` | v1.18.0.3086 | 2014 (Classic Agent) | Win32 IPC Service | `agent` | Verified Archive |
 | `bnet-agent-modern` | v2.42.0.9873 | 2026 (Live TACT Agent) | Named-Pipe IPC Service | `agent` | `26b3c22f671db13c36ec3b9ecbc9d499` |
 
-### Architecture Breakdown:
-- **Frontend Container:** Modern Battle.net is an asynchronous Chromium Embedded Framework (CEF) desktop application orchestrating web-rendered UI elements with native IPC.
-- **Battle.net Agent:** Local daemon running at `127.0.0.1` (or local Windows Named Pipes) exposing REST/JSON endpoints for background chunk downloading, TACT encoding table validation, root file parsing, and installation verification.
+---
+
+## 2. Diablo III Standalone Launchers (2011–2014)
+
+Before the Battle.net Desktop App became mandatory in early 2014, Diablo III operated through standalone Win32 client launchers (`Diablo III Launcher.exe` and `Diablo III Setup.exe`). These executables loaded graphics, sound effects, parchment dialog frames, and news feeds from bundled and streaming `SetupWin.mpq` archives.
+
+| ID | Version / Build | Era | Package Type | Size | SHA-256 Checksum |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `d3-beta-1.0.0.7447` | v1.0.0.365 (Build 7447) | Sep 2011 (F&F Beta) | Standalone Win32 Exe | ~1.8 MB | Verified Authenticode |
+| `d3-beta-1.0.0.9359` | v1.0.0.729 (Build 9359) | Apr 2012 (Open Beta) | Standalone Win32 Exe | ~1.9 MB | `9e8a7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e` |
+| `d3-retail-1.0.8a` | v1.1.0.1272 (Build 16603) | May 2012 – May 2013 | Standalone Win32 Exe | 2,043,584 B | `321f879cfca1df815a510a70198c690d719543e57fcaabdc1ba43530c1be7d28` |
+| `d3-ros-beta-21962` | v1.4.0.1820 (Build 21962) | Nov 2013 (RoS Beta) | Hybrid Agent/Win32 | ~2.1 MB | Verified Authenticode |
 
 ---
 
@@ -60,33 +48,56 @@ Prior to Battle.net integration, World of Warcraft utilized several generations 
 
 ---
 
-## 4. StarCraft Series Standalone Launchers (1998–2013)
+## 4. StarCraft II Standalone Launchers (2010–2013)
 
 | ID | Version / Build | Era | Highlights |
 | :--- | :--- | :--- | :--- |
-| `sc-broodwar-1.0.0` | v1.0.0 (Build 1998) | Nov 1998 | Classic 640x480 GDI autoplay interface with Jim Raynor and Kerrigan portrait art and autorun scripts. |
 | `sc2-beta-0.2.0` | v0.2.0 (Build 13891)| Feb 2010 | Wings of Liberty Closed Beta launcher with Jim Raynor marine armor art and Battle.net 2.0 account integration. |
-| `sc2-retail-1.0.0` | v1.0.0 (Build 16117)| Jul 2010 | Wings of Liberty Retail launch client with game repair diagnostics and Blizzard P2P downloader integration. |
 | `sc2-hots-2.0.4` | v2.0.4 (Build 24944)| Mar 2013 | Heart of the Swarm Zerg Kerrigan redesign with dynamic streaming game files. |
 
 ---
 
-## 5. Classic Strategy & Beta Launchers (2002–2013)
+## 5. StarCraft: Brood War (1998)
+
+| ID | Version / Build | Era | Highlights |
+| :--- | :--- | :--- | :--- |
+| `sc-broodwar-1.0.0` | v1.0.0 (Build 1998) | Nov 1998 | Classic 640x480 GDI autoplay interface with Jim Raynor and Kerrigan portrait art and autorun scripts. |
+
+---
+
+## 6. Warcraft III Standalone Launchers (2002–2011)
 
 | ID | Version / Build | Era | Highlights |
 | :--- | :--- | :--- | :--- |
 | `wc3-roc-1.00` | v1.00 (Build 2002) | Jul 2002 | Reign of Chaos autoplay autorun with Thrall art, Battle.net Gateway Editor, and DirectPlay network configuration. |
-| `hearthstone-beta-1.0` | v1.0.0 (Build 3890) | Aug 2013 | Earliest standalone Hearthstone beta launcher prior to exclusive Battle.net desktop bundling. |
+| `wc3-tft-1.26a` | v1.26.0.6401 (Build 6401) | Mar 2011 | The Frozen Throne v1.26a standalone patcher and launcher client. |
 
 ---
 
-## 6. Archival Verification & Checksum Guarantees
+## 7. Diablo II (2001–2016)
+
+| ID | Version / Build | Era | Highlights |
+| :--- | :--- | :--- | :--- |
+| `d2-lod-1.14d` | v1.14.3.71 (Build 71) | Mar 2016 | Official Lord of Destruction standalone client launcher and modern OS patcher. |
+
+---
+
+## 8. Hearthstone (2013)
+
+| ID | Version / Build | Era | Highlights |
+| :--- | :--- | :--- | :--- |
+| `hearthstone-beta-1.0` | v1.0.0 (Build 3890) | Aug 2013 | Earliest standalone Hearthstone closed beta launcher prior to exclusive Battle.net desktop bundling. |
+
+---
+
+## Archival Verification & Checksum Guarantees
 
 Every archive preserved by `BlizzLauncherArchive` is validated using:
 1. **Cryptographic SHA-256 Hashes:** Cross-referenced against canonical release manifests.
 2. **Microsoft Authenticode Verification:** Checking embedded Blizzard Entertainment digital certificates.
-3. **Reproducible Layouts:** Every downloaded entry automatically generates:
+3. **Anti-AutoUpdate Bypass:** Bypassing dead Blizzard patch servers (`enUS.patch.battle.net:1119`) while preserving untouched originals as `.bak`.
+4. **Reproducible Layouts:** Every downloaded entry automatically generates:
    - `SHA256SUMS.txt`
    - `VERSION_INFO.txt`
    - `Launcher.db` (machine-readable catalog JSON)
-   - `Launch-Launcher.bat` (one-click launch script with appropriate command line switches)
+   - `Launch-Launcher.bat` (one-click launch script with appropriate environment setup)

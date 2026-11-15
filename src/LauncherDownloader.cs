@@ -107,6 +107,9 @@ namespace BlizzLauncherArchive
                 await File.WriteAllTextAsync(Path.Combine(destinationFolder, "Launcher.db"), "enUS", Encoding.ASCII, ct);
             }
 
+            // Apply Anti-AutoUpdate Patch to prevent classic launchers hanging on dead update servers
+            LauncherPatcher.PatchBinary(exePath, item, log);
+
             // Generate portable batch script
             string batPath = Path.Combine(destinationFolder, "Launch-Launcher.bat");
             var sbBat = new StringBuilder();
@@ -115,8 +118,9 @@ namespace BlizzLauncherArchive
             sbBat.AppendLine($"title {item.Title} (Build {item.BuildNumber})");
             sbBat.AppendLine($"echo ========================================================================");
             sbBat.AppendLine($"echo  {item.Title} (Build {item.BuildNumber})");
+            sbBat.AppendLine($"echo  Blizzard Launcher Archive — Offline Preservation Runner");
             sbBat.AppendLine($"echo ========================================================================");
-            sbBat.AppendLine($"echo Starting {item.BinaryFileName}...");
+            sbBat.AppendLine("echo Starting launcher...");
             sbBat.AppendLine($"start \"\" \"%~dp0{item.BinaryFileName}\"");
             await File.WriteAllTextAsync(batPath, sbBat.ToString(), Encoding.UTF8, ct);
 

@@ -31,7 +31,10 @@
     <EmbeddedResource Include="Assets\d3_banner.jpg" LogicalName="d3_banner.jpg" />
     <EmbeddedResource Include="Assets\wow_banner.jpg" LogicalName="wow_banner.jpg" />
     <EmbeddedResource Include="Assets\sc2_banner.jpg" LogicalName="sc2_banner.jpg" />
-    <EmbeddedResource Include="Assets\classic_banner.jpg" LogicalName="classic_banner.jpg" />
+    <EmbeddedResource Include="Assets\sc1_banner.jpg" LogicalName="sc1_banner.jpg" />
+    <EmbeddedResource Include="Assets\wc3_banner.jpg" LogicalName="wc3_banner.jpg" />
+    <EmbeddedResource Include="Assets\d2_banner.jpg" LogicalName="d2_banner.jpg" />
+    <EmbeddedResource Include="Assets\hearthstone_banner.jpg" LogicalName="hearthstone_banner.jpg" />
   </ItemGroup>
 
 </Project>

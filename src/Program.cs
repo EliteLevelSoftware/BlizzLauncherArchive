@@ -29,7 +29,7 @@ namespace BlizzLauncherArchive
             AttachConsole(-1);
             Console.WriteLine("========================================================================");
             Console.WriteLine(" Blizzard Launcher Archive — Standalone & Battle.net Time Machine");
-            Console.WriteLine(" by Elite Level Software (v1.0.0)");
+            Console.WriteLine(" by Elite Level Software (v1.0.1)");
             Console.WriteLine("========================================================================");
 
             string targetDir = @"C:\Games\Blizzard_Launcher_Archive";
@@ -42,6 +42,28 @@ namespace BlizzLauncherArchive
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
+                if (a.Equals("--shim", StringComparison.OrdinalIgnoreCase))
+                {
+                    int shimPort = 0;
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out int p))
+                    {
+                        shimPort = p;
+                        i++;
+                    }
+                    Console.WriteLine($"Starting Local Agent Shim on port {(shimPort > 0 ? shimPort.ToString() : "dynamic")}...");
+                    using var shim = new AgentShimServer(shimPort);
+                    shim.Start();
+                    Console.WriteLine($"[SHIM ACTIVE] Listening on port {shim.Port}. Press Ctrl+C to stop.");
+                    Thread.Sleep(Timeout.Infinite);
+                    return 0;
+                }
+                if (a.Equals("--patch", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    string fileToPatch = Path.GetFullPath(args[++i]);
+                    Console.WriteLine($"Applying Anti-AutoUpdate patch to: {fileToPatch}");
+                    bool ok = LauncherPatcher.PatchBinary(fileToPatch, null, Console.WriteLine);
+                    return ok ? 0 : 1;
+                }
                 if (a.Equals("--snapshot-expanded", StringComparison.OrdinalIgnoreCase) && i + 2 < args.Length)
                 {
                     int expandIdx = int.Parse(args[++i]);
@@ -179,9 +201,11 @@ namespace BlizzLauncherArchive
             Console.WriteLine("  --version, -v <id|ver|build>   Archive a specific launcher build by ID, version string, or build number.");
             Console.WriteLine("  --dir, -d <path>               Specify target directory (default: C:\\Games\\Blizzard_Launcher_Archive).");
             Console.WriteLine("  --backup <path>                Perform full cold-storage bulk archival of all catalog items to path.");
-            Console.WriteLine("  --game, -g <family>            Filter by game family (BattleNet, Diablo3, WoW, StarCraft, Classic, all).");
+            Console.WriteLine("  --game, -g <family>            Filter by game family (BattleNet, Diablo3, WoW, StarCraft2, StarCraftBroodWar, Warcraft3, Diablo2, Hearthstone, all).");
             Console.WriteLine("  --binaries-only                Skip multi-megabyte SetupWin skin archives for instant fast deployment.");
-            Console.WriteLine("  --retro-launch [build]         Open the interactive 2012 Diablo III retro launcher emulator.");
+            Console.WriteLine("  --shim [port]                  Start lightweight local Agent shim server for offline authentic launchers.");
+            Console.WriteLine("  --patch <file>                 Apply Anti-AutoUpdate patch to bypass dead Blizzard update servers.");
+            Console.WriteLine("  --retro-launch [build]         Open the interactive retro launcher player.");
             Console.WriteLine("  --help, -h                     Display this command-line reference.");
         }
 
