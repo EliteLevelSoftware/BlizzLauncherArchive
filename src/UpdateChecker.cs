@@ -24,7 +24,9 @@ namespace BlizzLauncherArchive
 
     public static class UpdateChecker
     {
-        public const string CurrentVersion = "1.0.2";
+        public static string CurrentVersion => typeof(UpdateChecker).Assembly.GetName().Version != null
+            ? $"{typeof(UpdateChecker).Assembly.GetName().Version.Major}.{typeof(UpdateChecker).Assembly.GetName().Version.Minor}.{typeof(UpdateChecker).Assembly.GetName().Version.Build}"
+            : "1.0.3";
         private const string GitHubApiReleasesLatest = "https://api.github.com/repos/EliteLevelSoftware/BlizzLauncherArchive/releases/latest";
 
         public static async Task<UpdateInfo> CheckForUpdatesAsync(HttpClient http = null, CancellationToken ct = default)

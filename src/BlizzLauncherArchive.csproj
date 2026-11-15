@@ -17,9 +17,9 @@
     <Company>Elite Level Software</Company>
     <Authors>Elite Level Software</Authors>
     <Copyright>© 2026 Elite Level Software. All rights reserved.</Copyright>
-    <Version>1.0.3</Version>
-    <AssemblyVersion>1.0.3</AssemblyVersion>
-    <FileVersion>1.0.3</FileVersion>
+    <Version>1.0.4</Version>
+    <AssemblyVersion>1.0.4</AssemblyVersion>
+    <FileVersion>1.0.4</FileVersion>
     <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <StartupObject>BlizzLauncherArchive.Program</StartupObject>
   </PropertyGroup>
@@ -35,6 +35,7 @@
     <EmbeddedResource Include="Assets\wc3_banner.jpg" LogicalName="wc3_banner.jpg" />
     <EmbeddedResource Include="Assets\d2_banner.jpg" LogicalName="d2_banner.jpg" />
     <EmbeddedResource Include="Assets\hearthstone_banner.jpg" LogicalName="hearthstone_banner.jpg" />
+    <EmbeddedResource Include="Assets\d3_retro_launcher.png" LogicalName="d3_retro_launcher.png" />
   </ItemGroup>
 
 </Project>

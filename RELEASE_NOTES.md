@@ -1,3 +1,26 @@
+# Release Notes: BlizzLauncherArchive v1.0.4
+
+**Release Date:** November 2026  
+**Build:** `v1.0.4` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.4
+
+### 1. Authentic Diablo III Gothic Launcher Experience
+- **Pixel-Perfect Ornate Gothic Frame:** Retro Play now renders the authentic 2011/2012 Diablo III launcher with transparency shaping around the carved metallic horns and Diablo horned skull artwork.
+- **Interactive Top Menu Bar:** Added interactive `OPTIONS`, `INFO`, and `HELP` navigation, providing on-the-fly Realm selection, custom game client linking, and historical patch archives.
+- **Vintage News & Community Feeds:** Restored the historical September 2011 Sanctuary announcements (Gold Auction House, Beta Patch 3, The Shared Stash, Community Site levels up) and community links.
+- **Interactive Stone PLAY Button & Streaming Bar:** Features the carved stone `PLAY` button with glowing hover feedback, 3-stage streaming markers (`1 SETUP`, `2 AVAILABLE`, `3 PLAYABLE`), and the red soulstone download status.
+- **Seamless Desktop Dragging:** Drag the launcher anywhere across your desktop by grabbing the frame.
+
+### 2. Resolved Update Checker False-Positive
+- Dynamically resolves the executing assembly version (`v1.0.4`) in `UpdateChecker.cs` instead of comparing against a static constant, preventing false "Update Available" notifications when already on the latest version.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.3
 
 **Release Date:** November 2026  
