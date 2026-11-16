@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -25,22 +26,39 @@ namespace BlizzLauncherArchive
         private bool _isClientless;
         private string _resolvedExecutable;
         private readonly LauncherGameFamily _family;
+        private LauncherModConfig _config;
 
         private Image _masterImage;
+        private Image _btnPlayOff, _btnPlayOver, _btnPlayDown;
+        private Image _btnCloseOff, _btnCloseOver, _btnCloseDown;
+        private Image _btnMinOff, _btnMinOver, _btnMinDown;
+        private Image _newsThumbImg, _commThumbImg;
+
         private Rectangle _rcClose = new Rectangle(760, 84, 25, 23);
         private Rectangle _rcMin = new Rectangle(734, 84, 25, 23);
         private Rectangle _rcOptions = new Rectangle(76, 84, 70, 22);
         private Rectangle _rcInfo = new Rectangle(164, 84, 46, 22);
         private Rectangle _rcHelp = new Rectangle(222, 84, 48, 22);
-        private Rectangle _rcPlay = new Rectangle(564, 436, 192, 68);
+        private Rectangle _rcModStudio = new Rectangle(282, 84, 110, 22);
+        private Rectangle _rcPlay = new Rectangle(564, 412, 192, 68);
 
-        // News & Community areas
-        private Rectangle _rcNewsAll = new Rectangle(680, 218, 70, 18);
-        private Rectangle _rcCommAll = new Rectangle(680, 378, 70, 18);
-        private Rectangle _rcProgressBar = new Rectangle(70, 435, 480, 68);
+        private Rectangle _rcNewsAll = new Rectangle(685, 193, 68, 18);
+        private Rectangle _rcCommAll = new Rectangle(685, 304, 68, 18);
+        private Rectangle _rcNewsThumb = new Rectangle(388, 220, 52, 52);
+        private Rectangle _rcCommThumb = new Rectangle(388, 330, 52, 52);
+        private readonly Rectangle[] _rcNewsItems = new Rectangle[4];
+        private readonly Rectangle[] _rcCommItems = new Rectangle[4];
+        private Rectangle _rcProgressBar = new Rectangle(68, 434, 476, 32);
 
-        private int _hoveredButton = 0; // 1: Close, 2: Min, 3: Options, 4: Info, 5: Help, 6: Play, 7: NewsAll, 8: CommAll, 9: Progress
-        private readonly ToolTip _toolTip;
+        private int _hoveredId = 0;
+        private bool _isMouseDown = false;
+        private double _animProgress = 0.18;
+        private readonly System.Windows.Forms.Timer _animTimer;
+
+        public RetroLauncherEmulator(LauncherItem launcherMeta, string gameDirectory = null)
+            : this(gameDirectory, launcherMeta)
+        {
+        }
 
         public RetroLauncherEmulator(string gameDirectory = null, LauncherItem launcherMeta = null)
         {
@@ -48,30 +66,23 @@ namespace BlizzLauncherArchive
             _family = launcherMeta?.Family ?? LauncherGameFamily.Diablo3;
 
             ResolveGameLocation(gameDirectory);
+            _config = LauncherModConfig.LoadOrCreate(_gameDirectory, _launcherMeta);
 
-            Text = $"{GetFamilyTitle(_family)} Launcher (Retro Preservation Player)";
+            Text = $"{_config.WindowTitle} — Interactive Launcher Preview ({_launcherMeta?.Version ?? "1.1.0.1272"})";
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
 
-            _toolTip = new ToolTip
+            for (int i = 0; i < 4; i++)
             {
-                BackColor = Color.FromArgb(20, 22, 28),
-                ForeColor = Color.FromArgb(215, 160, 45),
-                OwnerDraw = true
-            };
-            _toolTip.Draw += (s, e) =>
-            {
-                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(24, 26, 32)), e.Bounds);
-                e.Graphics.DrawRectangle(new Pen(Color.FromArgb(215, 160, 45), 1), new Rectangle(e.Bounds.X, e.Bounds.Y, e.Bounds.Width - 1, e.Bounds.Height - 1));
-                using var font = new Font("Segoe UI", 9f);
-                e.Graphics.DrawString(e.ToolTipText, font, Brushes.LightGray, new PointF(e.Bounds.X + 6, e.Bounds.Y + 4));
-            };
+                _rcNewsItems[i] = new Rectangle(448, 218 + i * 16, 306, 16);
+                _rcCommItems[i] = new Rectangle(448, 328 + i * 16, 306, 16);
+            }
 
-            LoadMasterAsset();
+            LoadAssets();
 
-            if (_masterImage != null)
+            if (_masterImage != null && _family == LauncherGameFamily.Diablo3)
             {
                 Size = new Size(_masterImage.Width, _masterImage.Height);
                 BackColor = Color.Magenta;
@@ -79,133 +90,95 @@ namespace BlizzLauncherArchive
             }
             else
             {
-                Size = new Size(840, 580);
-                BackColor = Color.FromArgb(14, 16, 20);
+                Size = new Size(828, 608);
+                BackColor = Color.FromArgb(14, 10, 8);
                 ForeColor = Color.White;
             }
+
+            _animTimer = new System.Windows.Forms.Timer { Interval = 35 };
+            _animTimer.Tick += (s, e) =>
+            {
+                double target = Math.Clamp(_config.ProgressPercentage / 100.0, 0.05, 1.0);
+                if (_animProgress < target)
+                {
+                    _animProgress = Math.Min(target, _animProgress + 0.018);
+                    Invalidate(new Rectangle(50, 390, 510, 110));
+                }
+                else
+                {
+                    _animTimer.Stop();
+                }
+            };
+            _animTimer.Start();
         }
 
         private void ResolveGameLocation(string preferredDir)
         {
-            string[] candidateExes = GetCandidateExeNames(_family);
-
-            if (!string.IsNullOrWhiteSpace(preferredDir) && Directory.Exists(preferredDir))
+            _gameDirectory = NativeLauncherRunner.ResolveGameDirectory(preferredDir, _launcherMeta);
+            string exeName = _config?.TargetExecutable ?? "Diablo III.exe";
+            string candidate = Path.Combine(_gameDirectory, exeName);
+            if (File.Exists(candidate) && new FileInfo(candidate).Length > 0)
             {
-                foreach (var exeName in candidateExes)
+                _resolvedExecutable = candidate;
+                _isClientless = false;
+            }
+            else
+            {
+                _resolvedExecutable = null;
+                _isClientless = true;
+            }
+        }
+
+        private void LoadAssets()
+        {
+            try
+            {
+                using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("d3_retro_launcher.png");
+                if (stream != null)
                 {
-                    string candidate = Path.Combine(preferredDir, exeName);
-                    if (File.Exists(candidate))
+                    _masterImage = Image.FromStream(stream);
+                }
+            }
+            catch { }
+
+            string decompDir = LauncherAssetDecompiler.GetDecompiledFolder(_gameDirectory);
+            if (!Directory.Exists(decompDir))
+            {
+                try { LauncherAssetDecompiler.DecompileLauncherAssets(_gameDirectory, _launcherMeta); } catch { }
+            }
+
+            _btnPlayOff = TryLoadDecompiledImage(decompDir, "d3/btn_large_off.png", "btn_large_off.png");
+            _btnPlayOver = TryLoadDecompiledImage(decompDir, "d3/btn_large_over.png", "btn_large_over.png");
+            _btnPlayDown = TryLoadDecompiledImage(decompDir, "d3/btn_large_down.png", "btn_large_down.png");
+
+            _btnCloseOff = TryLoadDecompiledImage(decompDir, "d3/btn_close_off.png", "btn_close_off.png");
+            _btnCloseOver = TryLoadDecompiledImage(decompDir, "d3/btn_close_over.png", "btn_close_over.png");
+            _btnCloseDown = TryLoadDecompiledImage(decompDir, "d3/btn_close_down.png", "btn_close_down.png");
+
+            _btnMinOff = TryLoadDecompiledImage(decompDir, "d3/btn_min_off.png", "btn_min_off.png");
+            _btnMinOver = TryLoadDecompiledImage(decompDir, "d3/btn_min_over.png", "btn_min_over.png");
+            _btnMinDown = TryLoadDecompiledImage(decompDir, "d3/btn_min_down.png", "btn_min_down.png");
+
+            _newsThumbImg = TryLoadDecompiledImage(decompDir, "web/news_thumb.png");
+            _commThumbImg = TryLoadDecompiledImage(decompDir, "web/comm_thumb.png");
+        }
+
+        private static Image TryLoadDecompiledImage(string decompDir, params string[] relPaths)
+        {
+            foreach (string rel in relPaths)
+            {
+                string full = Path.Combine(decompDir, rel.Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(full))
+                {
+                    try
                     {
-                        _gameDirectory = preferredDir;
-                        _resolvedExecutable = candidate;
-                        _isClientless = false;
-                        return;
+                        using var fs = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        return Image.FromStream(fs);
                     }
+                    catch { }
                 }
             }
-
-            string[] probeRoots = new[]
-            {
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), GetDefaultFolder(_family)),
-                Path.Combine(@"C:\Games", GetDefaultFolder(_family)),
-                Path.Combine(@"D:\Games", GetDefaultFolder(_family)),
-                Path.Combine(@"D:\", GetDefaultFolder(_family)),
-                Path.Combine(@"C:\", GetDefaultFolder(_family))
-            };
-
-            foreach (var root in probeRoots)
-            {
-                if (Directory.Exists(root))
-                {
-                    foreach (var exeName in candidateExes)
-                    {
-                        string candidate = Path.Combine(root, exeName);
-                        if (File.Exists(candidate))
-                        {
-                            _gameDirectory = root;
-                            _resolvedExecutable = candidate;
-                            _isClientless = false;
-                            return;
-                        }
-                    }
-                }
-            }
-
-            _gameDirectory = preferredDir ?? @"C:\Games\Blizzard_Launcher_Archive";
-            _resolvedExecutable = null;
-            _isClientless = true;
-        }
-
-        private static string[] GetCandidateExeNames(LauncherGameFamily family)
-        {
-            return family switch
-            {
-                LauncherGameFamily.Diablo3 => new[] { Path.Combine("x64", "Diablo III64.exe"), "Diablo III.exe" },
-                LauncherGameFamily.Diablo2 => new[] { "Game.exe", "Diablo II.exe" },
-                LauncherGameFamily.StarCraft2 => new[] { Path.Combine("Support64", "SC2Switcher_x64.exe"), Path.Combine("Support", "SC2Switcher.exe"), "SC2.exe" },
-                LauncherGameFamily.StarCraftBroodWar => new[] { "StarCraft.exe" },
-                LauncherGameFamily.Warcraft3 => new[] { "Frozen Throne.exe", "Warcraft III.exe", "War3.exe" },
-                LauncherGameFamily.WoW => new[] { "Wow.exe", "Wow-64.exe", "WoW.exe" },
-                LauncherGameFamily.Hearthstone => new[] { "Hearthstone.exe" },
-                _ => new[] { "Diablo III.exe", "Game.exe" }
-            };
-        }
-
-        private static string GetDefaultFolder(LauncherGameFamily family)
-        {
-            return family switch
-            {
-                LauncherGameFamily.Diablo3 => "Diablo III",
-                LauncherGameFamily.Diablo2 => "Diablo II",
-                LauncherGameFamily.StarCraft2 => "StarCraft II",
-                LauncherGameFamily.StarCraftBroodWar => "StarCraft",
-                LauncherGameFamily.Warcraft3 => "Warcraft III",
-                LauncherGameFamily.WoW => "World of Warcraft",
-                LauncherGameFamily.Hearthstone => "Hearthstone",
-                _ => "Diablo III"
-            };
-        }
-
-        private static string GetFamilyTitle(LauncherGameFamily family)
-        {
-            return family switch
-            {
-                LauncherGameFamily.Diablo3 => "DIABLO  III",
-                LauncherGameFamily.Diablo2 => "DIABLO  II",
-                LauncherGameFamily.StarCraft2 => "STARCRAFT  II",
-                LauncherGameFamily.StarCraftBroodWar => "STARCRAFT",
-                LauncherGameFamily.Warcraft3 => "WARCRAFT  III",
-                LauncherGameFamily.WoW => "WORLD OF WARCRAFT",
-                LauncherGameFamily.Hearthstone => "HEARTHSTONE",
-                _ => "BLIZZARD  LAUNCHER"
-            };
-        }
-
-        private void LoadMasterAsset()
-        {
-            string resName = _family == LauncherGameFamily.Diablo3 ? "d3_retro_launcher.png" : null;
-
-            if (resName != null)
-            {
-                try
-                {
-                    using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
-                    if (stream != null)
-                    {
-                        _masterImage = Image.FromStream(stream);
-                    }
-                }
-                catch { }
-            }
-
-            if (_masterImage == null && File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "d3_retro_launcher.png")))
-            {
-                try
-                {
-                    _masterImage = Image.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "d3_retro_launcher.png"));
-                }
-                catch { }
-            }
+            return null;
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -213,102 +186,320 @@ namespace BlizzLauncherArchive
             base.OnPaint(e);
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            if (_masterImage != null)
+            if (_masterImage != null && _family == LauncherGameFamily.Diablo3)
             {
-                // Clear to Magenta transparency key
                 g.Clear(Color.Magenta);
                 g.DrawImage(_masterImage, 0, 0, Width, Height);
-
-                // Draw Interactive Hover Overlays
-                if (_hoveredButton == 1) // Close
-                {
-                    using var brush = new SolidBrush(Color.FromArgb(70, 220, 40, 40));
-                    g.FillRectangle(brush, _rcClose);
-                    using var pen = new Pen(Color.FromArgb(200, 255, 60, 60), 1.5f);
-                    g.DrawRectangle(pen, _rcClose);
-                }
-                else if (_hoveredButton == 2) // Min
-                {
-                    using var brush = new SolidBrush(Color.FromArgb(60, 200, 160, 40));
-                    g.FillRectangle(brush, _rcMin);
-                    using var pen = new Pen(Color.FromArgb(200, 220, 180, 50), 1.5f);
-                    g.DrawRectangle(pen, _rcMin);
-                }
-                else if (_hoveredButton == 3) // Options
-                {
-                    using var pen = new Pen(Color.FromArgb(220, 215, 160, 45), 2);
-                    g.DrawLine(pen, _rcOptions.Left + 4, _rcOptions.Bottom - 2, _rcOptions.Right - 4, _rcOptions.Bottom - 2);
-                }
-                else if (_hoveredButton == 4) // Info
-                {
-                    using var pen = new Pen(Color.FromArgb(220, 215, 160, 45), 2);
-                    g.DrawLine(pen, _rcInfo.Left + 4, _rcInfo.Bottom - 2, _rcInfo.Right - 4, _rcInfo.Bottom - 2);
-                }
-                else if (_hoveredButton == 5) // Help
-                {
-                    using var pen = new Pen(Color.FromArgb(220, 215, 160, 45), 2);
-                    g.DrawLine(pen, _rcHelp.Left + 4, _rcHelp.Bottom - 2, _rcHelp.Right - 4, _rcHelp.Bottom - 2);
-                }
-                else if (_hoveredButton == 6) // PLAY
-                {
-                    using var pen = new Pen(Color.FromArgb(180, 255, 180, 50), 2.5f);
-                    using var brush = new SolidBrush(Color.FromArgb(35, 255, 180, 40));
-                    g.FillRectangle(brush, _rcPlay);
-                    g.DrawRectangle(pen, _rcPlay);
-                }
-                else if (_hoveredButton == 7) // News View All
-                {
-                    using var pen = new Pen(Color.FromArgb(200, 255, 120, 40), 1.5f);
-                    g.DrawLine(pen, _rcNewsAll.Left, _rcNewsAll.Bottom, _rcNewsAll.Right, _rcNewsAll.Bottom);
-                }
-                else if (_hoveredButton == 8) // Community View All
-                {
-                    using var pen = new Pen(Color.FromArgb(200, 255, 120, 40), 1.5f);
-                    g.DrawLine(pen, _rcCommAll.Left, _rcCommAll.Bottom, _rcCommAll.Right, _rcCommAll.Bottom);
-                }
-                else if (_hoveredButton == 9) // Progress bar
-                {
-                    using var pen = new Pen(Color.FromArgb(100, 200, 60, 30), 1.5f);
-                    g.DrawRectangle(pen, _rcProgressBar);
-                }
-
-                // If in Clientless mode, draw a discreet mode indicator under the frame
-                string modeText = _isClientless ? "● STANDALONE PRESERVATION MODE (CLIENTLESS)" : "● LINKED GAME CLIENT ACTIVE";
-                Color modeCol = _isClientless ? Color.FromArgb(200, 80, 180, 255) : Color.FromArgb(200, 50, 230, 100);
-                using var fontMode = new Font("Segoe UI", 7.5f, FontStyle.Bold);
-                using var brushMode = new SolidBrush(modeCol);
-                g.DrawString(modeText, fontMode, brushMode, 76, 526);
             }
+            else
+            {
+                DrawCustomFamilyBackdrop(g);
+            }
+
+            // 1. Top Menu Bar ("MOD STUDIO" button + hover highlights on OPTIONS, INFO, HELP)
+            DrawTopMenuAndWindowButtons(g);
+
+            // 2. Dynamic News & Community Section (renders live items from launcher-config.json + thumbnails + hover states)
+            DrawDynamicNewsAndCommunity(g);
+
+            // 3. Dynamic 3-Stage Animated Progress Bar + PLAY Button with real decompiled hover/down textures
+            DrawAnimatedProgressBarAndPlayButton(g);
+
+            // 4. Footer Server & Build Status Indicator
+            string statusLine = $"● SERVER: {_config.ServerName.ToUpperInvariant()} ({_config.ServerHost}:{_config.ServerPort})  |  BUILD: {_launcherMeta?.BuildNumber ?? "16603"}";
+            using var fontFooter = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+            using var brushFooter = new SolidBrush(Color.FromArgb(215, 70, 225, 110));
+            g.DrawString(statusLine, fontFooter, brushFooter, 68, 514);
+        }
+
+        private void DrawCustomFamilyBackdrop(Graphics g)
+        {
+            Color cTop = _family switch
+            {
+                LauncherGameFamily.StarCraft2 or LauncherGameFamily.StarCraftBroodWar => Color.FromArgb(12, 26, 48),
+                LauncherGameFamily.WoW or LauncherGameFamily.Warcraft3 => Color.FromArgb(34, 24, 12),
+                LauncherGameFamily.Hearthstone => Color.FromArgb(46, 30, 14),
+                _ => Color.FromArgb(36, 12, 8)
+            };
+            using (var bg = new LinearGradientBrush(ClientRectangle, cTop, Color.FromArgb(10, 8, 8), 90f))
+            {
+                g.FillRectangle(bg, ClientRectangle);
+            }
+            using (var borderPen = new Pen(Color.FromArgb(165, 120, 62), 2))
+            {
+                g.DrawRectangle(borderPen, 24, 68, Width - 48, Height - 100);
+            }
+            using (var menuBg = new SolidBrush(Color.FromArgb(200, 18, 12, 10)))
+            {
+                g.FillRectangle(menuBg, 26, 78, Width - 52, 34);
+            }
+            using (var titleFont = new Font("Georgia", 20f, FontStyle.Bold))
+            using (var titleBrush = new SolidBrush(Color.FromArgb(245, 210, 135)))
+            {
+                var sf = new StringFormat { Alignment = StringAlignment.Center };
+                g.DrawString(_launcherMeta?.Title ?? _config.WindowTitle, titleFont, titleBrush, new RectangleF(0, 24, Width, 38), sf);
+            }
+            using (var menuFont = new Font("Georgia", 9.5f, FontStyle.Bold))
+            using (var menuBrush = new SolidBrush(Color.FromArgb(220, 195, 145)))
+            {
+                g.DrawString("OPTIONS", menuFont, menuBrush, _rcOptions.Left, _rcOptions.Top + 3);
+                g.DrawString("INFO", menuFont, menuBrush, _rcInfo.Left, _rcInfo.Top + 3);
+                g.DrawString("HELP", menuFont, menuBrush, _rcHelp.Left, _rcHelp.Top + 3);
+            }
+
+            // Left hero panel for non-D3 families
+            var heroRect = new Rectangle(44, 124, 315, 270);
+            using (var hb = new LinearGradientBrush(heroRect, Color.FromArgb(80, cTop.R + 40, cTop.G + 30, cTop.B + 20), Color.FromArgb(220, 12, 10, 10), 45f))
+            {
+                g.FillRectangle(hb, heroRect);
+            }
+            using (var hp = new Pen(Color.FromArgb(120, 90, 50), 1))
+            {
+                g.DrawRectangle(hp, heroRect);
+            }
+            using (var hf = new Font("Georgia", 13f, FontStyle.Bold))
+            using (var htb = new SolidBrush(Color.FromArgb(235, 200, 140)))
+            {
+                g.DrawString($"{_launcherMeta?.ReleaseDate ?? "Classic Era"}\n{_launcherMeta?.Version ?? ""}", hf, htb, new RectangleF(60, 220, 280, 70));
+            }
+        }
+
+        private void DrawTopMenuAndWindowButtons(Graphics g)
+        {
+            // Draw "MOD STUDIO" pill on menu bar
+            using (var modBg = new SolidBrush(_hoveredId == 60 ? Color.FromArgb(180, 195, 72, 24) : Color.FromArgb(130, 95, 36, 16)))
+            using (var modPen = new Pen(Color.FromArgb(210, 195, 140, 75), 1))
+            using (var modFont = new Font("Segoe UI", 7.5f, FontStyle.Bold))
+            {
+                g.FillRectangle(modBg, _rcModStudio);
+                g.DrawRectangle(modPen, _rcModStudio);
+                var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString("⚙ MOD & RECOMPILE", modFont, Brushes.AntiqueWhite, _rcModStudio, sf);
+            }
+
+            if (_hoveredId == 3) DrawMenuUnderline(g, _rcOptions);
+            else if (_hoveredId == 4) DrawMenuUnderline(g, _rcInfo);
+            else if (_hoveredId == 5) DrawMenuUnderline(g, _rcHelp);
+
+            // Minimize & Close button states from Decompiled_Assets
+            if (_hoveredId == 1)
+            {
+                Image closeImg = _isMouseDown ? (_btnCloseDown ?? _btnCloseOver) : _btnCloseOver;
+                if (closeImg != null) g.DrawImage(closeImg, _rcClose);
+                else
+                {
+                    using var b = new SolidBrush(Color.FromArgb(90, 255, 60, 40));
+                    g.FillRectangle(b, _rcClose);
+                }
+            }
+            else if (_hoveredId == 2)
+            {
+                Image minImg = _isMouseDown ? (_btnMinDown ?? _btnMinOver) : _btnMinOver;
+                if (minImg != null) g.DrawImage(minImg, _rcMin);
+                else
+                {
+                    using var b = new SolidBrush(Color.FromArgb(80, 255, 190, 60));
+                    g.FillRectangle(b, _rcMin);
+                }
+            }
+        }
+
+        private static void DrawMenuUnderline(Graphics g, Rectangle rc)
+        {
+            using var glow = new SolidBrush(Color.FromArgb(45, 255, 190, 80));
+            g.FillRectangle(glow, rc);
+            using var pen = new Pen(Color.FromArgb(230, 245, 195, 95), 2f);
+            g.DrawLine(pen, rc.Left + 4, rc.Bottom - 2, rc.Right - 4, rc.Bottom - 2);
+        }
+
+        private void DrawDynamicNewsAndCommunity(Graphics g)
+        {
+            // Cover the right-side News/Community region cleanly so custom launcher-config.json text renders crisp and live
+            var newsPanelRect = new Rectangle(380, 184, 382, 212);
+            using (var bgBrush = new LinearGradientBrush(newsPanelRect, Color.FromArgb(245, 26, 11, 7), Color.FromArgb(250, 18, 7, 5), 90f))
+            {
+                g.FillRectangle(bgBrush, newsPanelRect);
+            }
+
+            using var headerFont = new Font("Georgia", 13f, FontStyle.Regular);
+            using var viewAllFont = new Font("Arial", 8.5f, FontStyle.Bold);
+            using var itemFont = new Font("Arial", 8.5f, FontStyle.Regular);
+            using var itemHoverFont = new Font("Arial", 8.5f, FontStyle.Underline);
+            using var linePen = new Pen(Color.FromArgb(180, 78, 44, 24), 1f);
+            using var thumbBorder = new Pen(Color.FromArgb(220, 110, 76, 40), 1f);
+
+            // --- NEWS SECTION ---
+            g.DrawString("News", headerFont, new SolidBrush(Color.FromArgb(245, 232, 208)), 386, 188);
+            Color viewAllNewsCol = _hoveredId == 7 ? Color.FromArgb(255, 165, 85) : Color.FromArgb(216, 98, 28);
+            g.DrawString("> View All", viewAllFont, new SolidBrush(viewAllNewsCol), _rcNewsAll.Left, _rcNewsAll.Top + 2);
+            g.DrawLine(linePen, 388, 211, 754, 211);
+
+            if (_newsThumbImg != null)
+                g.DrawImage(_newsThumbImg, _rcNewsThumb);
+            g.DrawRectangle(thumbBorder, _rcNewsThumb);
+
+            for (int i = 0; i < Math.Min(4, _config.NewsItems.Count); i++)
+            {
+                var n = _config.NewsItems[i];
+                bool hovered = (_hoveredId == 10 + i);
+                var rc = _rcNewsItems[i];
+                using var titleBrush = new SolidBrush(hovered ? Color.FromArgb(255, 230, 165) : Color.FromArgb(176, 141, 87));
+                using var dateBrush = new SolidBrush(hovered ? Color.FromArgb(225, 190, 130) : Color.FromArgb(125, 99, 64));
+                g.DrawString("• " + n.Title, hovered ? itemHoverFont : itemFont, titleBrush, rc.Left, rc.Top);
+                var sfRight = new StringFormat { Alignment = StringAlignment.Far };
+                g.DrawString(n.Date, itemFont, dateBrush, new RectangleF(rc.Left, rc.Top, rc.Width, rc.Height), sfRight);
+            }
+
+            // --- COMMUNITY SECTION ---
+            g.DrawString("Community", headerFont, new SolidBrush(Color.FromArgb(245, 232, 208)), 386, 298);
+            Color viewAllCommCol = _hoveredId == 8 ? Color.FromArgb(255, 165, 85) : Color.FromArgb(216, 98, 28);
+            g.DrawString("> View All", viewAllFont, new SolidBrush(viewAllCommCol), _rcCommAll.Left, _rcCommAll.Top + 2);
+            g.DrawLine(linePen, 388, 321, 754, 321);
+
+            if (_commThumbImg != null)
+                g.DrawImage(_commThumbImg, _rcCommThumb);
+            g.DrawRectangle(thumbBorder, _rcCommThumb);
+
+            for (int i = 0; i < Math.Min(4, _config.CommunityItems.Count); i++)
+            {
+                var c = _config.CommunityItems[i];
+                bool hovered = (_hoveredId == 20 + i);
+                var rc = _rcCommItems[i];
+                using var titleBrush = new SolidBrush(hovered ? Color.FromArgb(255, 230, 165) : Color.FromArgb(176, 141, 87));
+                using var dateBrush = new SolidBrush(hovered ? Color.FromArgb(225, 190, 130) : Color.FromArgb(125, 99, 64));
+                g.DrawString("• " + c.Title, hovered ? itemHoverFont : itemFont, titleBrush, rc.Left, rc.Top);
+                var sfRight = new StringFormat { Alignment = StringAlignment.Far };
+                g.DrawString(c.Date, itemFont, dateBrush, new RectangleF(rc.Left, rc.Top, rc.Width, rc.Height), sfRight);
+            }
+        }
+
+        private void DrawAnimatedProgressBarAndPlayButton(Graphics g)
+        {
+            // Cover the progress bar & status text zone so animated load bar & custom stage labels render cleanly
+            var barZone = new Rectangle(58, 396, 496, 92);
+            using (var zoneBg = new SolidBrush(Color.FromArgb(248, 17, 7, 5)))
+            {
+                g.FillRectangle(zoneBg, barZone);
+            }
+
+            using var numFont = new Font("Georgia", 18f, FontStyle.Regular);
+            using var stageFont = new Font("Georgia", 8.5f, FontStyle.Bold);
+            using var subFont = new Font("Georgia", 8f, FontStyle.Regular);
+
+            // Stage 1: SETUP
+            g.DrawString("1", numFont, new SolidBrush(Color.FromArgb(235, 65, 18)), 88, 398);
+            g.DrawString(_config.Stage1Title, stageFont, new SolidBrush(Color.FromArgb(235, 65, 18)), 112, 398);
+            g.DrawString(_config.Stage1SubText, subFont, new SolidBrush(Color.FromArgb(150, 125, 95)), 112, 413);
+
+            // Stage 2: AVAILABLE
+            Color s2Col = _animProgress >= 0.35 ? Color.FromArgb(215, 165, 45) : Color.FromArgb(125, 98, 42);
+            g.DrawString($"2 {_config.Stage2Title}", stageFont, new SolidBrush(s2Col), 248, 398);
+            g.DrawString(_config.Stage2SubText, subFont, new SolidBrush(Color.FromArgb(125, 105, 78)), 248, 413);
+
+            // Stage 3: PLAYABLE
+            Color s3Col = _animProgress >= 0.85 ? Color.FromArgb(75, 195, 75) : Color.FromArgb(62, 115, 58);
+            g.DrawString($"3 {_config.Stage3Title}", stageFont, new SolidBrush(s3Col), 414, 398);
+            g.DrawString(_config.Stage3SubText, subFont, new SolidBrush(Color.FromArgb(125, 105, 78)), 414, 413);
+
+            // Ornate Progress Bar Track
+            var trackRect = new Rectangle(72, 438, 468, 22);
+            using (var trackBg = new SolidBrush(Color.FromArgb(26, 8, 6)))
+            {
+                g.FillRectangle(trackBg, trackRect);
+            }
+
+            int fillWidth = Math.Max(12, (int)(trackRect.Width * _animProgress));
+            var fillRect = new Rectangle(trackRect.X + 2, trackRect.Y + 2, Math.Min(trackRect.Width - 4, fillWidth), trackRect.Height - 4);
+            Color fillStart = _animProgress >= 0.99 ? Color.FromArgb(185, 38, 12) : Color.FromArgb(155, 20, 6);
+            Color fillEnd = _animProgress >= 0.99 ? Color.FromArgb(255, 145, 35) : Color.FromArgb(245, 95, 18);
+            using (var barGrad = new LinearGradientBrush(fillRect, fillStart, fillEnd, 0f))
+            {
+                g.FillRectangle(barGrad, fillRect);
+            }
+
+            // Threshold Pointers
+            using (var yellowPtr = new SolidBrush(Color.FromArgb(215, 175, 45)))
+            {
+                int px1 = trackRect.X + (int)(trackRect.Width * 0.34);
+                g.FillPolygon(yellowPtr, new[] { new Point(px1, trackRect.Bottom - 1), new Point(px1 - 5, trackRect.Bottom + 5), new Point(px1 + 5, trackRect.Bottom + 5) });
+            }
+            using (var greenPtr = new SolidBrush(Color.FromArgb(65, 185, 65)))
+            {
+                int px2 = trackRect.X + (int)(trackRect.Width * 0.91);
+                g.FillPolygon(greenPtr, new[] { new Point(px2, trackRect.Bottom - 1), new Point(px2 - 5, trackRect.Bottom + 5), new Point(px2 + 5, trackRect.Bottom + 5) });
+            }
+
+            using (var framePen = new Pen(_hoveredId == 9 ? Color.FromArgb(215, 165, 90) : Color.FromArgb(118, 92, 64), 1.5f))
+            {
+                g.DrawRectangle(framePen, trackRect);
+            }
+
+            // Status Text under Progress Bar
+            string bottomStatus = _animProgress < 0.99
+                ? $"STREAMING GAME DATA ({(int)(_animProgress * 100)}%) — CLICK BAR TO REPLAY"
+                : $"{_config.StatusText}   •   {_config.TotalDownloadRemainingText}";
+            using (var statusFont = new Font("Georgia", 8f, FontStyle.Regular))
+            using (var statusBrush = new SolidBrush(Color.FromArgb(215, 178, 92)))
+            {
+                var sfCenter = new StringFormat { Alignment = StringAlignment.Center };
+                g.DrawString(bottomStatus, statusFont, statusBrush, new RectangleF(trackRect.X, trackRect.Bottom + 7, trackRect.Width, 18), sfCenter);
+            }
+
+            // PLAY Button (using real decompiled sprites from Decompiled_Assets/d3/btn_large_off/over/down.png)
+            Image playSprite = _hoveredId == 6
+                ? (_isMouseDown ? (_btnPlayDown ?? _btnPlayOver) : (_btnPlayOver ?? _btnPlayOff))
+                : _btnPlayOff;
+
+            if (playSprite != null)
+            {
+                g.DrawImage(playSprite, _rcPlay);
+            }
+            else
+            {
+                using var pb = new LinearGradientBrush(_rcPlay, Color.FromArgb(140, 32, 14), Color.FromArgb(70, 14, 6), 90f);
+                g.FillRectangle(pb, _rcPlay);
+                using var pp = new Pen(Color.FromArgb(185, 140, 78), 1.5f);
+                g.DrawRectangle(pp, _rcPlay);
+            }
+
+            using var playFont = new Font("Georgia", 18f, FontStyle.Regular);
+            Color playTextCol = _hoveredId == 6 ? Color.FromArgb(255, 245, 205) : Color.FromArgb(245, 205, 145);
+            using var playBrush = new SolidBrush(playTextCol);
+            var sfPlay = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString(_config.PlayButtonText, playFont, playBrush, _rcPlay, sfPlay);
+        }
+
+        private int HitTest(Point pt)
+        {
+            if (_rcClose.Contains(pt)) return 1;
+            if (_rcMin.Contains(pt)) return 2;
+            if (_rcOptions.Contains(pt)) return 3;
+            if (_rcInfo.Contains(pt)) return 4;
+            if (_rcHelp.Contains(pt)) return 5;
+            if (_rcModStudio.Contains(pt)) return 60;
+            if (_rcPlay.Contains(pt)) return 6;
+            if (_rcNewsAll.Contains(pt) || _rcNewsThumb.Contains(pt)) return 7;
+            if (_rcCommAll.Contains(pt) || _rcCommThumb.Contains(pt)) return 8;
+            if (_rcProgressBar.Contains(pt)) return 9;
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (_rcNewsItems[i].Contains(pt)) return 10 + i;
+                if (_rcCommItems[i].Contains(pt)) return 20 + i;
+            }
+            return 0;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            int prevHover = _hoveredButton;
-
-            if (_rcClose.Contains(e.Location)) _hoveredButton = 1;
-            else if (_rcMin.Contains(e.Location)) _hoveredButton = 2;
-            else if (_rcOptions.Contains(e.Location)) _hoveredButton = 3;
-            else if (_rcInfo.Contains(e.Location)) _hoveredButton = 4;
-            else if (_rcHelp.Contains(e.Location)) _hoveredButton = 5;
-            else if (_rcPlay.Contains(e.Location)) _hoveredButton = 6;
-            else if (_rcNewsAll.Contains(e.Location)) _hoveredButton = 7;
-            else if (_rcCommAll.Contains(e.Location)) _hoveredButton = 8;
-            else if (_rcProgressBar.Contains(e.Location)) _hoveredButton = 9;
-            else _hoveredButton = 0;
-
-            if (_hoveredButton != 0)
+            int hit = HitTest(e.Location);
+            Cursor = hit != 0 ? Cursors.Hand : Cursors.Default;
+            if (hit != _hoveredId)
             {
-                Cursor = Cursors.Hand;
-            }
-            else
-            {
-                Cursor = Cursors.Default;
-            }
-
-            if (prevHover != _hoveredButton)
-            {
+                _hoveredId = hit;
                 Invalidate();
             }
         }
@@ -316,58 +507,77 @@ namespace BlizzLauncherArchive
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            if (e.Button != MouseButtons.Left) return;
 
-            if (e.Button == MouseButtons.Left)
+            int hit = HitTest(e.Location);
+            if (hit != 0)
             {
-                if (_rcClose.Contains(e.Location))
-                {
-                    Close();
-                    return;
-                }
-                if (_rcMin.Contains(e.Location))
-                {
-                    WindowState = FormWindowState.Minimized;
-                    return;
-                }
-                if (_rcOptions.Contains(e.Location))
-                {
-                    ShowPreferencesDialog();
-                    return;
-                }
-                if (_rcInfo.Contains(e.Location))
-                {
-                    ShowInfoDialog();
-                    return;
-                }
-                if (_rcHelp.Contains(e.Location))
-                {
-                    ShowHelpDialog();
-                    return;
-                }
-                if (_rcPlay.Contains(e.Location))
-                {
-                    HandlePlayClick();
-                    return;
-                }
-                if (_rcNewsAll.Contains(e.Location) || _rcCommAll.Contains(e.Location))
-                {
-                    ShowNewsDialog();
-                    return;
-                }
-                if (_rcProgressBar.Contains(e.Location))
-                {
-                    ShowStreamingEngineStatus();
-                    return;
-                }
-
-                // Drag window
-                ReleaseCapture();
-                SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+                _isMouseDown = true;
+                Invalidate();
+                return;
             }
+
+            ReleaseCapture();
+            SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            if (!_isMouseDown) return;
+            _isMouseDown = false;
+            Invalidate();
+
+            int hit = HitTest(e.Location);
+            if (hit == 1) Close();
+            else if (hit == 2) WindowState = FormWindowState.Minimized;
+            else if (hit == 3) OpenMockSite("status");
+            else if (hit == 4) OpenMockSite("patchnotes");
+            else if (hit == 5) OpenMockSite("patchnotes");
+            else if (hit == 60) OpenModStudio();
+            else if (hit == 6) HandlePlayClick();
+            else if (hit == 7) OpenMockSite("news");
+            else if (hit == 8) OpenMockSite("community");
+            else if (hit == 9)
+            {
+                // Replay load bar animation when progress bar is clicked
+                _animProgress = 0.05;
+                _animTimer.Start();
+            }
+            else if (hit >= 10 && hit < 14)
+            {
+                int idx = hit - 10;
+                string title = idx < _config.NewsItems.Count ? _config.NewsItems[idx].Title : null;
+                OpenMockSite("news", title);
+            }
+            else if (hit >= 20 && hit < 24)
+            {
+                int idx = hit - 20;
+                string title = idx < _config.CommunityItems.Count ? _config.CommunityItems[idx].Title : null;
+                OpenMockSite("community", title);
+            }
+        }
+
+        private void OpenMockSite(string section, string highlightTitle = null)
+        {
+            using var dlg = new MockWebsiteDialog(_config, _gameDirectory, section, highlightTitle);
+            dlg.ShowDialog(this);
+            _config = LauncherModConfig.LoadOrCreate(_gameDirectory, _launcherMeta);
+            Invalidate();
+        }
+
+        private void OpenModStudio()
+        {
+            using var dlg = new LauncherModStudioDialog(_gameDirectory, _launcherMeta);
+            dlg.ShowDialog(this);
+            _config = LauncherModConfig.LoadOrCreate(_gameDirectory, _launcherMeta);
+            LoadAssets();
+            Invalidate();
         }
 
         private void HandlePlayClick()
         {
+            ResolveGameLocation(_gameDirectory);
             if (!_isClientless && !string.IsNullOrWhiteSpace(_resolvedExecutable) && File.Exists(_resolvedExecutable))
             {
                 try
@@ -375,300 +585,19 @@ namespace BlizzLauncherArchive
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = _resolvedExecutable,
-                        Arguments = "-launch",
+                        Arguments = _config.LaunchArguments,
                         WorkingDirectory = _gameDirectory,
                         UseShellExecute = true
                     });
-                    Close();
+                    return;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Could not boot game client: {ex.Message}", "Launch Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            else
-            {
-                ShowClientlessSandbox();
-            }
-        }
 
-        private void ShowClientlessSandbox()
-        {
-            try { System.Media.SystemSounds.Asterisk.Play(); } catch { }
-
-            using var sandboxDlg = new Form
-            {
-                Text = "Diablo III — Sanctuary Gateway Session Simulator",
-                Size = new Size(760, 480),
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                StartPosition = FormStartPosition.CenterParent,
-                BackColor = Color.FromArgb(14, 16, 20),
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9.5f)
-            };
-
-            var pnlTop = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 70,
-                BackColor = Color.FromArgb(28, 12, 12)
-            };
-            pnlTop.Paint += (s, e) =>
-            {
-                using var brushGold = new SolidBrush(Color.FromArgb(235, 185, 75));
-                using var font = new Font("Georgia", 16, FontStyle.Bold);
-                e.Graphics.DrawString("DIABLO III — SANCTUARY GATEWAY SIMULATOR", font, brushGold, 20, 14);
-                using var fontSub = new Font("Segoe UI", 9, FontStyle.Italic);
-                e.Graphics.DrawString("Authentic 2011/2012 Vintage Launcher Preserved Environment", fontSub, Brushes.LightGray, 22, 42);
-            };
-
-            var txtConsole = new TextBox
-            {
-                Multiline = true,
-                ReadOnly = true,
-                ScrollBars = ScrollBars.Vertical,
-                Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(16, 18, 22),
-                ForeColor = Color.FromArgb(200, 230, 255),
-                BorderStyle = BorderStyle.None,
-                Font = new Font("Consolas", 9.5f),
-                Text = "========================================================================\r\n" +
-                       " [SANCTUARY GATEWAY SESSION ESTABLISHED]\r\n" +
-                       "========================================================================\r\n" +
-                       " • Product Identity  : Diablo III (D3 / Retail 1.1.0 / Beta)\r\n" +
-                       " • Mode              : 100% Clientless Standalone Preservation\r\n" +
-                       " • Gateway Loopback  : 127.0.0.1:1119 (Agent Handshake Successful)\r\n" +
-                       " • Realm Server      : Americas Gateway (Session ID: 0x7E1A90B2)\r\n" +
-                       " • Core Streaming    : 100% Core Assets Verified (Setup & Playable)\r\n" +
-                       " • Audio & Video     : Initialized (D3Prefs Emulated)\r\n" +
-                       "------------------------------------------------------------------------\r\n" +
-                       " STATUS: The classic Diablo III launcher interface is running\r\n" +
-                       " in complete offline preservation mode. No 15 GB retail game files\r\n" +
-                       " are required to experience, inspect, and enjoy this vintage artwork.\r\n\r\n" +
-                       " To connect a full Diablo III game client, click 'Link Game Client' below\r\n" +
-                       " or open the OPTIONS menu anytime.\r\n" +
-                       "========================================================================\r\n"
-            };
-
-            var pnlBottom = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 60,
-                BackColor = Color.FromArgb(18, 20, 26)
-            };
-
-            var btnLink = new Button
-            {
-                Text = "📁 Link Full Game Client...",
-                Location = new Point(20, 14),
-                Size = new Size(190, 34),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(35, 45, 60),
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            btnLink.Click += (s, e) =>
-            {
-                if (PromptLinkClient())
-                {
-                    sandboxDlg.Close();
-                }
-            };
-
-            var btnClose = new Button
-            {
-                Text = "Close Sandbox",
-                Location = new Point(590, 14),
-                Size = new Size(130, 34),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(45, 50, 60),
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            btnClose.Click += (s, e) => sandboxDlg.Close();
-
-            pnlBottom.Controls.AddRange(new Control[] { btnLink, btnClose });
-            sandboxDlg.Controls.AddRange(new Control[] { txtConsole, pnlBottom, pnlTop });
-            sandboxDlg.ShowDialog(this);
-        }
-
-        private bool PromptLinkClient()
-        {
-            using var ofd = new OpenFileDialog
-            {
-                Title = "Locate Diablo III Executable (Diablo III.exe)",
-                Filter = "Diablo III Executable (*.exe)|*.exe|All Files (*.*)|*.*",
-                InitialDirectory = Directory.Exists(_gameDirectory) ? _gameDirectory : @"C:\"
-            };
-
-            if (ofd.ShowDialog(this) == DialogResult.OK)
-            {
-                string selExe = ofd.FileName;
-                if (File.Exists(selExe))
-                {
-                    _resolvedExecutable = selExe;
-                    _gameDirectory = Path.GetDirectoryName(selExe);
-                    _isClientless = false;
-                    Invalidate();
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private void ShowPreferencesDialog()
-        {
-            using var prefDlg = new Form
-            {
-                Text = "Diablo III Launcher — Game Preferences & Realm Gateway",
-                Size = new Size(540, 380),
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                StartPosition = FormStartPosition.CenterParent,
-                BackColor = Color.FromArgb(18, 20, 26),
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9.5f)
-            };
-
-            var lblHeader = new Label
-            {
-                Text = "Sanctuary Gateway Configuration",
-                Location = new Point(20, 16),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 12f, FontStyle.Bold),
-                ForeColor = Color.FromArgb(215, 160, 45)
-            };
-
-            var lblPath = new Label
-            {
-                Text = $"Current Game Directory:\r\n{(_isClientless ? "[Standalone Preservation Mode — Clientless]" : _gameDirectory)}",
-                Location = new Point(20, 55),
-                Size = new Size(480, 45),
-                ForeColor = Color.LightGray
-            };
-
-            var btnChange = new Button
-            {
-                Text = "📁 Browse Game Client...",
-                Location = new Point(20, 110),
-                Size = new Size(180, 32),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(35, 45, 60),
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            btnChange.Click += (s, e) =>
-            {
-                if (PromptLinkClient())
-                {
-                    lblPath.Text = $"Current Game Directory:\r\n{_gameDirectory}";
-                    Invalidate();
-                }
-            };
-
-            var btnUnlink = new Button
-            {
-                Text = "🏛️ Reset to Clientless Mode",
-                Location = new Point(210, 110),
-                Size = new Size(190, 32),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(40, 35, 45),
-                ForeColor = Color.FromArgb(220, 180, 180),
-                Cursor = Cursors.Hand
-            };
-            btnUnlink.Click += (s, e) =>
-            {
-                _isClientless = true;
-                _resolvedExecutable = null;
-                lblPath.Text = "Current Game Directory:\r\n[Standalone Preservation Mode — Clientless]";
-                Invalidate();
-            };
-
-            var grpGateway = new GroupBox
-            {
-                Text = "Gateway Realm Selection",
-                ForeColor = Color.FromArgb(215, 160, 45),
-                Location = new Point(20, 160),
-                Size = new Size(480, 110),
-                BackColor = Color.FromArgb(22, 24, 30)
-            };
-
-            var rdoUs = new RadioButton { Text = "Americas (US Gateway)", Location = new Point(20, 30), AutoSize = true, Checked = true, ForeColor = Color.White };
-            var rdoEu = new RadioButton { Text = "Europe (EU Gateway)", Location = new Point(240, 30), AutoSize = true, ForeColor = Color.White };
-            var rdoAsia = new RadioButton { Text = "Asia (KR/TW Gateway)", Location = new Point(20, 65), AutoSize = true, ForeColor = Color.White };
-            var rdoPtr = new RadioButton { Text = "Public Test Realm (PTR)", Location = new Point(240, 65), AutoSize = true, ForeColor = Color.White };
-
-            grpGateway.Controls.AddRange(new Control[] { rdoUs, rdoEu, rdoAsia, rdoPtr });
-
-            var btnClose = new Button
-            {
-                Text = "Save & Close",
-                Location = new Point(370, 290),
-                Size = new Size(130, 34),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(200, 145, 30),
-                ForeColor = Color.Black,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btnClose.Click += (s, e) => prefDlg.Close();
-
-            prefDlg.Controls.AddRange(new Control[] { lblHeader, lblPath, btnChange, btnUnlink, grpGateway, btnClose });
-            prefDlg.ShowDialog(this);
-        }
-
-        private void ShowInfoDialog()
-        {
-            MessageBox.Show(
-                "Diablo III Launcher (Preservation Suite v1.0.4)\r\n\r\n" +
-                "• Architecture: Standalone Historical Retro Player\r\n" +
-                "• Original Build: Retail 1.1.0 (Build 16603) / Beta Milestone\r\n" +
-                "• Release Target: May 15, 2012 Sanctuary Launch Lineage\r\n\r\n" +
-                "Preserved by Elite Level Software.",
-                "Diablo III Launcher Info",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private void ShowHelpDialog()
-        {
-            MessageBox.Show(
-                "Diablo III Launcher Help & Diagnostics:\r\n\r\n" +
-                "• Drag the window by clicking anywhere on the gothic metallic frame.\r\n" +
-                "• Click PLAY to boot into the clientless sandbox or launch a linked game.\r\n" +
-                "• Open OPTIONS to point to your Diablo III installation on any drive.\r\n" +
-                "• 100% offline standalone mode is active.",
-                "Diablo III Help",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private void ShowNewsDialog()
-        {
-            MessageBox.Show(
-                "Diablo III Historical News Bulletin (September 2011):\r\n\r\n" +
-                "• Gold AH Added to Friends & Family (Sep 16, 2011)\r\n" +
-                "• Diablo III Beta Patch 3 Live (Sep 14, 2011)\r\n" +
-                "• The Shared Stash & Artisans Deep Dive (Sep 13, 2011)\r\n" +
-                "• Community Site Levels Up With Skill Calculator (Sep 13, 2011)\r\n" +
-                "• Beta Opt-in and FAQ Operational (Sep 8, 2011)",
-                "Sanctuary Community News & Bulletins",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        private void ShowStreamingEngineStatus()
-        {
-            MessageBox.Show(
-                "Blizzard Streaming Engine Diagnostics:\r\n\r\n" +
-                "• Stage 1 (Setup)     : 933 MB / 933 MB (100% Complete)\r\n" +
-                "• Stage 2 (Available) : 1.57 GB / 1.57 GB (Verified)\r\n" +
-                "• Stage 3 (Playable)  : 210 MB / 210 MB (Optimal)\r\n\r\n" +
-                "Core streaming status: READY TO PLAY.",
-                "Streaming Engine Status",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            OpenMockSite("status");
         }
     }
 }

@@ -52,24 +52,22 @@ namespace BlizzLauncherArchive
 
             if (!Directory.Exists(targetDir)) return targetDir;
 
-            // 1. If targetDir already contains Diablo III files, use it directly
-            if (File.Exists(Path.Combine(targetDir, "Diablo III Launcher.exe")) || File.Exists(Path.Combine(targetDir, "SetupWin.mpq")))
+            if (File.Exists(Path.Combine(targetDir, "Diablo III Launcher.exe")) ||
+                File.Exists(Path.Combine(targetDir, "SetupWin.mpq")) ||
+                File.Exists(Path.Combine(targetDir, "launcher-config.json")))
             {
                 return targetDir;
             }
 
-            // 2. Direct match with item.FolderPrefix
             if (item != null)
             {
                 string direct = Path.Combine(targetDir, item.FolderPrefix);
                 if (Directory.Exists(direct)) return direct;
 
-                // Match by build number or family
                 var match = Directory.GetDirectories(targetDir, $"*{item.BuildNumber}*").FirstOrDefault();
                 if (match != null) return match;
             }
 
-            // 3. Fallback to any Diablo3_* subfolder
             var d3Dir = Directory.GetDirectories(targetDir, "Diablo3_*").OrderByDescending(d => d).FirstOrDefault();
             if (d3Dir != null) return d3Dir;
 
@@ -78,7 +76,14 @@ namespace BlizzLauncherArchive
 
         public static string FindClientExecutable(string gameDirectory = null)
         {
-            // 1. Check ProgramData\Battle.net\Client\Blizzard Launcher.*
+            // 1. Prefer user-recompiled custom launcher in gameDirectory if present
+            if (!string.IsNullOrWhiteSpace(gameDirectory) && Directory.Exists(gameDirectory))
+            {
+                string customExe = Path.Combine(gameDirectory, "Blizzard Launcher Custom.exe");
+                if (File.Exists(customExe)) return customExe;
+            }
+
+            // 2. Check ProgramData\Battle.net\Client\Blizzard Launcher.*
             string programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string clientBase = Path.Combine(programData, "Battle.net", "Client");
             if (Directory.Exists(clientBase))
@@ -103,7 +108,7 @@ namespace BlizzLauncherArchive
                 }
             }
 
-            // 2. Check local game directory
+            // 3. Check local game directory
             if (!string.IsNullOrWhiteSpace(gameDirectory) && Directory.Exists(gameDirectory))
             {
                 string localExe = Path.Combine(gameDirectory, "Blizzard Launcher.exe");
@@ -120,13 +125,12 @@ namespace BlizzLauncherArchive
         {
             Task.Run(async () =>
             {
-                for (int attempt = 0; attempt < 30; attempt++)
+                for (int attempt = 0; attempt < 25; attempt++)
                 {
-                    await Task.Delay(500);
+                    await Task.Delay(350);
                     if (proc.HasExited) break;
 
                     IntPtr mainHwnd = IntPtr.Zero;
-                    IntPtr splashHwnd = IntPtr.Zero;
 
                     EnumWindows((hwnd, _) =>
                     {
@@ -140,13 +144,16 @@ namespace BlizzLauncherArchive
                             GetWindowText(hwnd, sb, 256);
                             string title = sb.ToString();
 
-                            if (title == "Diablo III" || (w >= 800 && h >= 600))
+                            if (w == 820 && h == 650)
                             {
                                 mainHwnd = hwnd;
                             }
-                            else if (w >= 500 && w <= 600 && h >= 300 && h <= 400)
+                            else if (title == "Blizzard Launcher" || w > 1000 || (w >= 500 && w <= 600 && h >= 300 && h <= 400))
                             {
-                                splashHwnd = hwnd;
+                                if (IsWindowVisible(hwnd))
+                                {
+                                    ShowWindow(hwnd, SW_HIDE);
+                                }
                             }
                         }
                         return true;
@@ -157,28 +164,48 @@ namespace BlizzLauncherArchive
                         if (!IsWindowVisible(mainHwnd))
                         {
                             ShowWindow(mainHwnd, SW_SHOW);
-                            SetForegroundWindow(mainHwnd);
-                            log?.Invoke("[Native Launch] Authentic Diablo III Gothic Launcher window brought to foreground.");
                         }
-
-                        if (splashHwnd != IntPtr.Zero && IsWindowVisible(splashHwnd))
-                        {
-                            ShowWindow(splashHwnd, SW_HIDE);
-                        }
+                        SetForegroundWindow(mainHwnd);
+                        log?.Invoke("[Native Launch] Authentic Diablo III Gothic Launcher (820x650) active with live News & PLAY ready.");
                         break;
                     }
                 }
             });
         }
 
+        private static void PrepareGameDirectoryAndAssets(string gameDirectory, LauncherItem item, Action<string> log)
+        {
+            string decompDir = LauncherAssetDecompiler.GetDecompiledFolder(gameDirectory);
+            if (!Directory.Exists(decompDir) || !Directory.Exists(Path.Combine(decompDir, "web")))
+            {
+                LauncherAssetDecompiler.DecompileLauncherAssets(gameDirectory, item, log);
+            }
+
+            string dbPath = Path.Combine(gameDirectory, "Launcher.db");
+            if (!File.Exists(dbPath))
+            {
+                try { File.WriteAllText(dbPath, "enUS"); } catch { }
+            }
+
+            string d3Exe = Path.Combine(gameDirectory, "Diablo III.exe");
+            if (!File.Exists(d3Exe))
+            {
+                try { File.WriteAllBytes(d3Exe, Array.Empty<byte>()); } catch { }
+            }
+        }
+
         public static async Task<bool> LaunchAsync(string gameDirectory, LauncherItem item = null, Action<string> log = null)
         {
+            await Task.Yield();
             gameDirectory = ResolveGameDirectory(gameDirectory, item);
             if (string.IsNullOrWhiteSpace(gameDirectory) || !Directory.Exists(gameDirectory))
             {
                 log?.Invoke($"[Native Launch] Target directory does not exist: {gameDirectory}");
                 return false;
             }
+
+            PrepareGameDirectoryAndAssets(gameDirectory, item, log);
+            var config = LauncherModConfig.LoadOrCreate(gameDirectory, item);
 
             string clientExe = FindClientExecutable(gameDirectory);
             if (string.IsNullOrEmpty(clientExe) || !File.Exists(clientExe))
@@ -190,45 +217,22 @@ namespace BlizzLauncherArchive
             log?.Invoke($"[Native Launch] Target Game Directory: {gameDirectory}");
             log?.Invoke($"[Native Launch] Found native client: {clientExe}");
 
-            // Apply all native client patches (Retail product switch, properties dialog bypass, install state)
-            LauncherPatcher.PatchNativeLauncher(clientExe, log);
-
-            // Ensure launcher DB exists
-            string dbPath = Path.Combine(gameDirectory, "Launcher.db");
-            if (!File.Exists(dbPath))
-            {
-                try
-                {
-                    File.WriteAllText(dbPath, "enUS");
-                }
-                catch { }
-            }
-
-            // Ensure game executable stub or link exists so launcher sees valid installation
-            string d3Exe = Path.Combine(gameDirectory, "Diablo III.exe");
-            if (!File.Exists(d3Exe))
-            {
-                try
-                {
-                    File.WriteAllBytes(d3Exe, Array.Empty<byte>());
-                }
-                catch { }
-            }
-
-            // Start Agent Shim Server
             AgentShimServer shim = null;
+            int port = config.LocalWebFeedPort > 0 ? config.LocalWebFeedPort : 29505;
             try
             {
-                shim = new AgentShimServer(11195, gameDirectory);
+                shim = new AgentShimServer(port, gameDirectory);
                 shim.Start();
-                log?.Invoke($"[Native Launch] Local Agent Shim active on port {shim.Port}.");
+                port = shim.Port;
+                log?.Invoke($"[Native Launch] Local Agent & News Web Server active on port {port}.");
             }
             catch (Exception ex)
             {
                 log?.Invoke($"[Native Launch] Warning: Could not start Agent Shim: {ex.Message}");
             }
 
-            // Spawn Blizzard Launcher.exe
+            LauncherPatcher.PatchNativeLauncher(clientExe, log, port);
+
             try
             {
                 var psi = new ProcessStartInfo
@@ -248,7 +252,6 @@ namespace BlizzLauncherArchive
                 }
 
                 log?.Invoke($"[Native Launch] Native Blizzard Launcher launched (PID {proc.Id}).");
-
                 StartWindowWatcher(proc, log);
 
                 proc.EnableRaisingEvents = true;
@@ -277,6 +280,9 @@ namespace BlizzLauncherArchive
                 return false;
             }
 
+            PrepareGameDirectoryAndAssets(gameDirectory, item, log);
+            var config = LauncherModConfig.LoadOrCreate(gameDirectory, item);
+
             string clientExe = FindClientExecutable(gameDirectory);
             if (string.IsNullOrEmpty(clientExe) || !File.Exists(clientExe))
             {
@@ -284,38 +290,13 @@ namespace BlizzLauncherArchive
                 return false;
             }
 
-            log?.Invoke($"[Native Launch] Target Game Directory: {gameDirectory}");
-            log?.Invoke($"[Native Launch] Found native client: {clientExe}");
-
-            // Apply all native client patches
-            LauncherPatcher.PatchNativeLauncher(clientExe, log);
-
-            // Ensure launcher DB exists
-            string dbPath = Path.Combine(gameDirectory, "Launcher.db");
-            if (!File.Exists(dbPath))
-            {
-                try
-                {
-                    File.WriteAllText(dbPath, "enUS");
-                }
-                catch { }
-            }
-
-            // Ensure game executable stub or link exists
-            string d3Exe = Path.Combine(gameDirectory, "Diablo III.exe");
-            if (!File.Exists(d3Exe))
-            {
-                try
-                {
-                    File.WriteAllBytes(d3Exe, Array.Empty<byte>());
-                }
-                catch { }
-            }
-
-            // Start Agent Shim Server
-            using var shim = new AgentShimServer(11195, gameDirectory);
+            int port = config.LocalWebFeedPort > 0 ? config.LocalWebFeedPort : 29505;
+            using var shim = new AgentShimServer(port, gameDirectory);
             shim.Start();
-            log?.Invoke($"[Native Launch] Local Agent Shim active on port {shim.Port}.");
+            port = shim.Port;
+            log?.Invoke($"[Native Launch] Local Agent & News Web Server active on port {port}.");
+
+            LauncherPatcher.PatchNativeLauncher(clientExe, log, port);
 
             var psi = new ProcessStartInfo
             {

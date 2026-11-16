@@ -21,10 +21,10 @@ namespace BlizzLauncherArchive
         public int Port => _port;
         public bool IsRunning => _listener?.IsListening == true;
 
-        public AgentShimServer(int preferredPort = 0, string gameDirectory = null)
+        public AgentShimServer(int preferredPort = 29505, string gameDirectory = null)
         {
             _agentDatPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Battle.net", "Agent", "Agent.dat");
-            _port = preferredPort > 0 ? preferredPort : 11195;
+            _port = preferredPort > 0 ? preferredPort : 29505;
             _gameDirectory = string.IsNullOrWhiteSpace(gameDirectory)
                 ? @"C:\Games\Blizzard_Launcher_Archive\Diablo3_Retail_1.1.0.1272_16603"
                 : Path.GetFullPath(gameDirectory);
@@ -34,7 +34,6 @@ namespace BlizzLauncherArchive
         {
             if (IsRunning) return;
 
-            // Attempt to bind
             for (int attempt = 0; attempt < 5; attempt++)
             {
                 try
@@ -47,7 +46,7 @@ namespace BlizzLauncherArchive
                 catch
                 {
                     _listener?.Close();
-                    _port = 11190 + new Random().Next(10, 500);
+                    _port = 29505 + attempt;
                 }
             }
 
@@ -56,7 +55,6 @@ namespace BlizzLauncherArchive
                 throw new InvalidOperationException($"Could not bind Agent Shim HTTP listener on port {_port}.");
             }
 
-            // Backup existing Agent.dat and set our port
             try
             {
                 if (File.Exists(_agentDatPath))
@@ -70,7 +68,6 @@ namespace BlizzLauncherArchive
             }
             catch
             {
-                // Non-critical if unable to write Agent.dat
             }
 
             _cts = new CancellationTokenSource();
@@ -98,57 +95,69 @@ namespace BlizzLauncherArchive
             try
             {
                 string rawUrl = ctx.Request.RawUrl ?? string.Empty;
-                string responseJson;
-                string formattedGameDir = _gameDirectory.Replace('\\', '/');
+                string pathOnly = rawUrl.Split('?')[0];
+                string decompiledDir = LauncherAssetDecompiler.GetDecompiledFolder(_gameDirectory);
+                string webDir = Path.Combine(decompiledDir, "web");
+                var config = LauncherModConfig.LoadOrCreate(_gameDirectory);
 
-                if (rawUrl.Equals("/agent", StringComparison.OrdinalIgnoreCase) || rawUrl.StartsWith("/agent?", StringComparison.OrdinalIgnoreCase))
+                // Ensure web assets exist
+                if (!Directory.Exists(webDir) || !File.Exists(Path.Combine(webDir, "news_thumb.png")))
                 {
-                    responseJson = "{\"authorization\":\"1234567890\",\"opt_in_feedback\":true,\"pid\":1234,\"region\":\"us\",\"session\":\"1234567890\",\"state\":1004,\"type\":\"retail\",\"version\":\"1.0.0.524\"}";
-                }
-                else if (rawUrl.StartsWith("/gamesession", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = "{\"state\":1004,\"playable\":true,\"session_id\":\"1234567890\"}";
-                }
-                else if (rawUrl.StartsWith("/game/Client", StringComparison.OrdinalIgnoreCase) || rawUrl.StartsWith("/game/client", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = $"{{\"uid\":\"client\",\"patch_url\":\"http://127.0.0.1:{_port}/patch\",\"config\":{{\"supports_multibox\":false,\"patch_url\":\"http://127.0.0.1:{_port}/patch\",\"product\":\"Clnt\",\"update_method\":\"client update\",\"binary_version_path\":\"Blizzard Launcher.exe\",\"binary_launch_path\":\"Blizzard Launcher.exe\",\"preinstalled\":true,\"install_dir\":\"C:/ProgramData/Battle.net/Client\"}}}}";
-                }
-                else if (rawUrl.StartsWith("/game", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = $"{{\"uid\":\"d3\",\"product\":\"d3\",\"installed\":true,\"playable\":true,\"version\":\"1.1.0.1272\",\"binary_launch_path\":\"Diablo III.exe\",\"install_dir\":\"{formattedGameDir}\",\"patch_url\":\"http://127.0.0.1:{_port}/patch\",\"update_total\":0,\"update_current\":0,\"download_total\":0,\"download_current\":0}}";
-                }
-                else if (rawUrl.StartsWith("/install", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = "{\"installed\":true,\"playable\":true,\"progress\":1.0,\"state\":1004}";
-                }
-                else if (rawUrl.StartsWith("/update", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true,\"download_current\":100,\"download_total\":100,\"update_current\":100,\"update_total\":100}";
-                }
-                else if (rawUrl.StartsWith("/repair", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true}";
-                }
-                else if (rawUrl.StartsWith("/patch", StringComparison.OrdinalIgnoreCase))
-                {
-                    responseJson = "{\"state\":1004,\"progress\":1.0,\"playable\":true}";
-                }
-                else
-                {
-                    responseJson = "{\"state\":1004,\"playable\":true}";
+                    LauncherAssetDecompiler.GenerateEditableWebAssets(_gameDirectory, decompiledDir, config);
                 }
 
-                byte[] buf = Encoding.UTF8.GetBytes(responseJson);
-                ctx.Response.StatusCode = 200;
-                ctx.Response.ContentType = "application/json";
-                ctx.Response.ContentLength64 = buf.Length;
-                ctx.Response.OutputStream.Write(buf, 0, buf.Length);
-                ctx.Response.Close();
+                // 1. Serve PNG/image assets from Decompiled_Assets/web/
+                if (pathOnly.StartsWith("/d3/assets/", StringComparison.OrdinalIgnoreCase))
+                {
+                    string fileName = Path.GetFileName(pathOnly);
+                    string assetPath = Path.Combine(webDir, fileName);
+                    if (File.Exists(assetPath))
+                    {
+                        byte[] imgBytes = File.ReadAllBytes(assetPath);
+                        SendBytes(ctx, imgBytes, "image/png");
+                        return;
+                    }
+                }
+
+                // 2. Serve Launcher News & Community feed into QWebView (/D3/enUS/launcher/news)
+                if (pathOnly.IndexOf("/launcher/news", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    pathOnly.Equals("/news", StringComparison.OrdinalIgnoreCase))
+                {
+                    string customNewsHtml = Path.Combine(webDir, "news.html");
+                    string html = File.Exists(customNewsHtml)
+                        ? File.ReadAllText(customNewsHtml, Encoding.UTF8)
+                        : LauncherAssetDecompiler.BuildLauncherNewsHtml(config);
+                    SendBytes(ctx, Encoding.UTF8.GetBytes(html), "text/html; charset=utf-8");
+                    return;
+                }
+
+                // 3. Serve interactive Mock Website / Article / Community pages inside QWebView
+                if (pathOnly.StartsWith("/d3/", StringComparison.OrdinalIgnoreCase) ||
+                    pathOnly.IndexOf("/launcher/", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    string html = LauncherAssetDecompiler.BuildMockPortalHtml(config, "SANCTUARY COMMUNITY & NEWS ARCHIVE");
+                    SendBytes(ctx, Encoding.UTF8.GetBytes(html), "text/html; charset=utf-8");
+                    return;
+                }
+
+                // 4. Serve Agent REST endpoints
+                string responseJson = "{\"state\":1004,\"playable\":true}";
+                SendBytes(ctx, Encoding.UTF8.GetBytes(responseJson), "application/json");
             }
             catch
             {
                 try { ctx.Response.Abort(); } catch { }
             }
+        }
+
+        private static void SendBytes(HttpListenerContext ctx, byte[] buf, string contentType)
+        {
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = contentType;
+            ctx.Response.ContentLength64 = buf.Length;
+            ctx.Response.Headers["Connection"] = "close";
+            ctx.Response.OutputStream.Write(buf, 0, buf.Length);
+            ctx.Response.Close();
         }
 
         public void Stop()
@@ -161,7 +170,6 @@ namespace BlizzLauncherArchive
             }
             catch { }
 
-            // Restore Agent.dat
             if (_agentDatPatched && File.Exists(_agentDatPath))
             {
                 try

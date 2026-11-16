@@ -1,3 +1,32 @@
+# Release Notes: BlizzLauncherArchive v1.0.8
+
+**Release Date:** November 2026  
+**Build:** `v1.0.8` (source build)  
+**Binary:** `release/BlizzLauncherArchive.exe` (Single-file self-contained x64 executable)  
+**Platform:** Windows 10 / 11 (64-bit)  
+
+---
+
+## What's New in v1.0.8
+
+### 1. Native Launcher Full Playable Main Screen & WebKit News Feed
+- **Instant Playable Main Screen (`PatchPanel` & `UIController`):** Transitions `Blizzard Launcher.exe` directly into the full playable screen in under 1 second with the 3-stage progress bar (`1 SETUP`, `2 PLAYABLE`, `3 OPTIMAL`), `"GAME IS UP TO DATE"` status, enabled `OPTIONS` / `INFO` / `HELP` menu bar, and enabled `PLAY` button.
+- **Live WebKit News & Community Rendering:** Rewrites embedded Nydus/Battle.net URLs to the local `AgentShimServer` (`http://127.0.0.1:29505/D3/enUS/launcher/news`), rendering the left Diablo hero artwork, `52x52` News & Community thumbnails, headlines, dates, and clickable links directly inside the native Qt4 `QWebView`.
+- **Clean Desktop Window Management:** Explicitly hides the `1440x759` background container window and `565x374` splash window while bringing the `820x650` gothic `"Diablo III"` window to the foreground.
+
+### 2. Automatic Asset Decompiler (`Decompiled_Assets\`)
+- **Full Qt4 & Binary Resource Extraction (`LauncherAssetDecompiler`):** Automatically extracts all 137 embedded Qt4 resources (UI skins, `btn_large_off/over/down.png`, `btn_close_off/over/down.png`, `btn_min_off/over/down.png`, `background.png`, `bg_install.png`, progress bar sprites, decompressed `.ui` XML layouts, `.html` documents, and fonts) plus editable WebKit templates (`web/news.html`, `news_thumb.png`, `comm_thumb.png`, `diablo_hero.png`) into `<LauncherFolder>\Decompiled_Assets\` alongside the launcher so users can inspect and modify any asset before recompiling.
+
+### 3. Private Server Config (`launcher-config.json`) & Custom Launcher Recompiler
+- **Editable Private Server Config (`LauncherModConfig`):** Generates `<LauncherFolder>\launcher-config.json` allowing private server creators to customize server name, host/IP, port, target executable, CLI launch arguments, load bar stage labels, News headlines/dates/links, and Community announcements.
+- **Mod Studio & Recompiler (`LauncherModStudioDialog` & `LauncherRecompiler`):** Visual editor and CLI (`--decompile`, `--recompile`) that repacks modified assets from `Decompiled_Assets\` and custom settings from `launcher-config.json` into `<LauncherFolder>\Blizzard Launcher Custom.exe` and `Launch-Custom-Server.bat`.
+
+### 4. Visually Accurate Interactive Preview & Mock Sanctuary Websites
+- **Interactive Preview (`RetroLauncherEmulator`):** Renders real decompiled button states (`off`/`over`/`down`), prefilled news and community thumbnails, an animated 3-stage streaming progress bar, and interactive links for every launcher family in the catalog.
+- **Mock Battle.net / Sanctuary Portal (`MockWebsiteDialog`):** Clicking any News headline, Community link, `> View All`, or top menu button opens an interactive mock website displaying full articles, community spotlights, server gateway status, and patch notes.
+
+---
+
 # Release Notes: BlizzLauncherArchive v1.0.7
 
 **Release Date:** November 2026  

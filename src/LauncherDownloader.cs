@@ -159,10 +159,22 @@ namespace BlizzLauncherArchive
             sbBat.AppendLine($"start \"\" \"%GAME_DIR%\\{item.BinaryFileName}\"");
             await File.WriteAllTextAsync(batPath, sbBat.ToString(), Encoding.UTF8, ct);
 
+            // Automatically decompile embedded launcher assets into Decompiled_Assets\ and create launcher-config.json
+            try
+            {
+                LauncherAssetDecompiler.DecompileLauncherAssets(destinationFolder, item, log);
+            }
+            catch (Exception ex)
+            {
+                log($"[Decompiler] Notice: {ex.Message}");
+            }
+
             onProgress?.Invoke(100, "Complete!");
             log($"========================================================================");
             log($" SUCCESS: Archived {item.DisplayTitle}");
             log($" Location: {destinationFolder}");
+            log($" Decompiled Assets: {Path.Combine(destinationFolder, "Decompiled_Assets")}");
+            log($" Mod Config: {Path.Combine(destinationFolder, "launcher-config.json")}");
             log($" SHA-256 : {actualSha}");
             log($"========================================================================");
 

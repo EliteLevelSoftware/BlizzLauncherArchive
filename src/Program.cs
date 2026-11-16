@@ -29,7 +29,7 @@ namespace BlizzLauncherArchive
             AttachConsole(-1);
             Console.WriteLine("========================================================================");
             Console.WriteLine(" Blizzard Launcher Archive — Standalone & Battle.net Time Machine");
-            Console.WriteLine(" by Elite Level Software (v1.0.5)");
+            Console.WriteLine(" by Elite Level Software (v1.0.8)");
             Console.WriteLine("========================================================================");
 
             string targetDir = @"C:\Games\Blizzard_Launcher_Archive";
@@ -63,6 +63,19 @@ namespace BlizzLauncherArchive
                     string fileToPatch = Path.GetFullPath(args[++i]);
                     Console.WriteLine($"Applying Anti-AutoUpdate patch to: {fileToPatch}");
                     bool ok = LauncherPatcher.PatchBinary(fileToPatch, null, Console.WriteLine);
+                    return ok ? 0 : 1;
+                }
+                if (a.Equals("--decompile", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    string folder = Path.GetFullPath(args[++i]);
+                    int count = LauncherAssetDecompiler.DecompileLauncherAssets(folder, null, Console.WriteLine);
+                    return count > 0 ? 0 : 1;
+                }
+                if (a.Equals("--recompile", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    string folder = Path.GetFullPath(args[++i]);
+                    var cfg = LauncherModConfig.LoadOrCreate(folder);
+                    bool ok = LauncherRecompiler.RecompileLauncher(folder, cfg, null, Console.WriteLine);
                     return ok ? 0 : 1;
                 }
                 if (a.Equals("--snapshot-expanded", StringComparison.OrdinalIgnoreCase) && i + 2 < args.Length)

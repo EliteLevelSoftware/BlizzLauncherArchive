@@ -445,8 +445,9 @@ namespace BlizzLauncherArchive
                 }
                 if (devKitBtnRect.Contains(e.Location))
                 {
-                    using var devDlg = new LauncherIntegrationDialog(_selectedD3 ?? _selectedBnet);
-                    devDlg.ShowDialog(this);
+                    string targetDir = _txtTargetLocation?.Text ?? @"C:\Games\Blizzard_Launcher_Archive";
+                    using var modDlg = new LauncherModStudioDialog(targetDir, _selectedD3 ?? _selectedBnet);
+                    modDlg.ShowDialog(this);
                     return;
                 }
                 if (retroBtnRect.Contains(e.Location))
@@ -949,10 +950,11 @@ namespace BlizzLauncherArchive
                 BackColor = Color.FromArgb(12, 15, 23)
             };
 
-            var viewMoreRect = new Rectangle(16, BANNER_HEIGHT - 40, 160, 28);
-            var dossierBtnRect = new Rectangle(184, BANNER_HEIGHT - 40, 110, 28);
-            var retroBtnRect = new Rectangle(302, BANNER_HEIGHT - 40, 140, 28);
-            var nativeBtnRect = new Rectangle(450, BANNER_HEIGHT - 40, 176, 28);
+            var viewMoreRect = new Rectangle(16, BANNER_HEIGHT - 40, 148, 28);
+            var dossierBtnRect = new Rectangle(170, BANNER_HEIGHT - 40, 96, 28);
+            var retroBtnRect = new Rectangle(272, BANNER_HEIGHT - 40, 106, 28);
+            var nativeBtnRect = new Rectangle(384, BANNER_HEIGHT - 40, 122, 28);
+            var modBtnRect = new Rectangle(512, BANNER_HEIGHT - 40, 122, 28);
             var verBoxRect = new Rectangle(646, 26, 264, 48);
             var installBtnRect = new Rectangle(646, 84, 264, 42);
 
@@ -960,6 +962,7 @@ namespace BlizzLauncherArchive
             bool hoverDossier = false;
             bool hoverRetro = false;
             bool hoverNative = false;
+            bool hoverMod = false;
             bool hoverVerBox = false;
             bool hoverInstall = false;
 
@@ -1018,7 +1021,7 @@ namespace BlizzLauncherArchive
                 bool isExp = ctx.GetExpanded();
                 string vmText = isExp
                     ? $"Hide {buildCount} Builds"
-                    : $"View More (Choose from {buildCount} Builds)";
+                    : $"View {buildCount} Builds";
 
                 using (var vmPath = CreateRoundRect(viewMoreRect, 4))
                 using (var vmFill = new SolidBrush(hoverViewMore ? Color.FromArgb(230, 24, 34, 52) : Color.FromArgb(215, 12, 16, 26)))
@@ -1050,9 +1053,9 @@ namespace BlizzLauncherArchive
                     e.Graphics.DrawLine(sp, sx + 2, sy + 6, sx + 9, sy + 6);
                     e.Graphics.DrawLine(sp, sx + 2, sy + 9, sx + 6, sy + 9);
 
-                    var textRect = new Rectangle(dossierBtnRect.X + 22, dossierBtnRect.Y, dossierBtnRect.Width - 24, dossierBtnRect.Height);
+                    var textRect = new Rectangle(dossierBtnRect.X + 20, dossierBtnRect.Y, dossierBtnRect.Width - 22, dossierBtnRect.Height);
                     var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    e.Graphics.DrawString("Historical Dossier", dFont, dTextBrush, textRect, sf);
+                    e.Graphics.DrawString("Dossier", dFont, dTextBrush, textRect, sf);
                 }
 
                 // Retro Player Button (available for all launchers, specialized for D3)
@@ -1071,7 +1074,7 @@ namespace BlizzLauncherArchive
 
                     var textRect = new Rectangle(retroBtnRect.X + 20, retroBtnRect.Y, retroBtnRect.Width - 22, retroBtnRect.Height);
                     var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    e.Graphics.DrawString("Retro Play", rFont, rTextBrush, textRect, sf);
+                    e.Graphics.DrawString("Preview", rFont, rTextBrush, textRect, sf);
                 }
 
                 // Native Launcher Player Button (Authentic Qt Desktop Window)
@@ -1084,7 +1087,7 @@ namespace BlizzLauncherArchive
                     e.Graphics.FillPath(nFill, nPath);
                     e.Graphics.DrawPath(nPen, nPath);
 
-                    int nx = nativeBtnRect.X + 10, ny = nativeBtnRect.Y + 7;
+                    int nx = nativeBtnRect.X + 8, ny = nativeBtnRect.Y + 7;
                     using var lb = new SolidBrush(hoverNative ? Color.FromArgb(239, 68, 68) : Color.FromArgb(220, 80, 80));
                     e.Graphics.FillPolygon(lb, new[] {
                         new Point(nx + 6, ny),
@@ -1095,9 +1098,22 @@ namespace BlizzLauncherArchive
                         new Point(nx + 5, ny + 5)
                     });
 
-                    var textRect = new Rectangle(nativeBtnRect.X + 18, nativeBtnRect.Y, nativeBtnRect.Width - 20, nativeBtnRect.Height);
+                    var textRect = new Rectangle(nativeBtnRect.X + 16, nativeBtnRect.Y, nativeBtnRect.Width - 18, nativeBtnRect.Height);
                     var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    e.Graphics.DrawString("⚡ Native Launch", nFont, nTextBrush, textRect, sf);
+                    e.Graphics.DrawString("Native Launch", nFont, nTextBrush, textRect, sf);
+                }
+
+                // Mod & Recompile Studio Button
+                using (var mPath = CreateRoundRect(modBtnRect, 4))
+                using (var mFill = new SolidBrush(hoverMod ? Color.FromArgb(235, 24, 52, 86) : Color.FromArgb(215, 14, 26, 44)))
+                using (var mPen = new Pen(hoverMod ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 95, 145), 1f))
+                using (var mFont = new Font("Segoe UI", 8f, FontStyle.Bold))
+                using (var mTextBrush = new SolidBrush(hoverMod ? Color.White : Color.FromArgb(186, 230, 253)))
+                {
+                    e.Graphics.FillPath(mFill, mPath);
+                    e.Graphics.DrawPath(mPen, mPath);
+                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    e.Graphics.DrawString("⚙ Mod / Recompile", mFont, mTextBrush, modBtnRect, sf);
                 }
 
                 // Right Side: Version Selection Box
@@ -1171,15 +1187,17 @@ namespace BlizzLauncherArchive
                 bool hdo = dossierBtnRect.Contains(e.Location);
                 bool hret = retroBtnRect.Contains(e.Location);
                 bool hnat = nativeBtnRect.Contains(e.Location);
+                bool hmod = modBtnRect.Contains(e.Location);
                 bool hvb = verBoxRect.Contains(e.Location);
                 bool hin = !_isArchiving && installBtnRect.Contains(e.Location);
-                banner.Cursor = (hvm || hdo || hret || hnat || hvb || hin) ? Cursors.Hand : Cursors.Default;
-                if (hvm != hoverViewMore || hdo != hoverDossier || hret != hoverRetro || hnat != hoverNative || hvb != hoverVerBox || hin != hoverInstall)
+                banner.Cursor = (hvm || hdo || hret || hnat || hmod || hvb || hin) ? Cursors.Hand : Cursors.Default;
+                if (hvm != hoverViewMore || hdo != hoverDossier || hret != hoverRetro || hnat != hoverNative || hmod != hoverMod || hvb != hoverVerBox || hin != hoverInstall)
                 {
                     hoverViewMore = hvm;
                     hoverDossier = hdo;
                     hoverRetro = hret;
                     hoverNative = hnat;
+                    hoverMod = hmod;
                     hoverVerBox = hvb;
                     hoverInstall = hin;
                     banner.Invalidate();
@@ -1187,7 +1205,7 @@ namespace BlizzLauncherArchive
             };
             banner.MouseLeave += (_, _) =>
             {
-                hoverViewMore = hoverDossier = hoverRetro = hoverNative = hoverVerBox = hoverInstall = false;
+                hoverViewMore = hoverDossier = hoverRetro = hoverNative = hoverMod = hoverVerBox = hoverInstall = false;
                 banner.Invalidate();
             };
             banner.MouseClick += async (_, e) =>
@@ -1222,6 +1240,15 @@ namespace BlizzLauncherArchive
                         string runDir = NativeLauncherRunner.ResolveGameDirectory(targetDir, target);
                         _ = NativeLauncherRunner.LaunchAsync(runDir, target, AppendLog);
                     }
+                    return;
+                }
+
+                if (modBtnRect.Contains(e.Location))
+                {
+                    var target = ctx.GetSelected();
+                    string targetDir = _txtTargetLocation?.Text ?? @"C:\Games\Blizzard_Launcher_Archive";
+                    using var dlg = new LauncherModStudioDialog(targetDir, target);
+                    dlg.ShowDialog(this);
                     return;
                 }
 
